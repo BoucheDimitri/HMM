@@ -56,6 +56,11 @@ def trajectory_data(x0,
     #Fill the bearings column (observed process)
     data["z"] = (data["y"]/data["x"]).apply(
         lambda u: zfunct(eta, u))
+    # Pour z, on devrait remplacer par:
+    #  for i in range(0, T+1):
+    #    data["z"][i] = math.atan(data["y"][i]/data["x"][i]) + np.random.normal(0, eta ** 2)
+    # ta fonction précédente me produit un bug si les vitesse étaient différentes de 0
+    
     return data
 
 
