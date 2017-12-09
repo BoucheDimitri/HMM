@@ -1,67 +1,70 @@
 import numpy as np
 import pandas as pd
 import math
-import matplotlib.pyplot as plt
 
 
 def zfunct(z, eta):
     return math.atan(z) + np.random.normal(0, eta*eta)
 
 
-def trajectory_data(x0,
-                    y0,
-                    xp0,
-                    yp0,
-                    T,
-                    tau=1000,
-                    eta=0.0005):
-    """
-    Simulate  trajectory data according
-    to the article's procedure
-    :param x0: initial x coordinate
-    :param y0: initial y coordinate
-    :param xp0: initiall speed in x
-    :param yp0: initial speed in y
-    :param T: size of trajectory (n simulations)
-    :param tau: tau parameter from article
-    :param eta: eta parameter from article
-    :return: data as a pandas dataframe
-    """
-    #Initialize trajectory dataframe
-    data = pd.DataFrame(
-        columns=["x", "y", "xp", "yp", "z"],
-        index=range(0, T),
-        dtype=float)
-    #Fill first row with initial conditions
-    data.set_value(0, "x", x0)
-    data.set_value(0, "y", y0)
-    data.set_value(0, "xp", xp0)
-    data.set_value(0, "yp", yp0)
-    #Simulate and fill dataframe
-    for t in range(1, T+1):
+def speed_data(xp0,
+               yp0,
+               T,
+               tau=1000):
+    speeds = pd.DataFrame(columns=["xp", "yp"],
+                          index=range(0, T),
+                          dtype=float)
+    speeds.set_value(0, "xp", xp0)
+    speeds.set_value(0, "yp", yp0)
+    for t in range(1, T):
         xpt = np.random.normal(
-            data.get_value(t - 1, "xp"),
+            speeds.get_value(t - 1, "xp"),
             1 / tau)
         ypt = np.random.normal(
-            data.get_value(t - 1, "yp"),
+            speeds.get_value(t - 1, "yp"),
             1 / tau)
-        xt = data.get_value(t - 1, "x") \
-             + data.get_value(t - 1, "xp")
-        yt = data.get_value(t - 1, "y") \
-             + data.get_value(t - 1, "yp")
-        data.set_value(t, "x", xt)
-        data.set_value(t, "y", yt)
-        data.set_value(t, "xp", xpt)
-        data.set_value(t, "yp", ypt)
-    #Fill the bearings column (observed process)
-    data["z"] = (data["y"]/data["x"]).apply(
+        speeds.set_value(t, "xp", xpt)
+        speeds.set_value(t, "yp", ypt)
+    return speeds
+
+
+def loc_from_speed_data(speeds,
+                        x0,
+                        y0):
+    T = speeds.shape[0]
+    locs = pd.DataFrame(columns=["x", "y"],
+                        index=range(0, T))
+    locs = pd.concat((locs, speeds),
+                     axis=1)
+    locs.set_value(0, "x", x0)
+    locs.set_value(0, "y", y0)
+    cumxspeeds = locs["xp"].cumsum().shift(1).fillna(0)
+    cumyspeeds = locs["yp"].cumsum().shift(1).fillna(0)
+    locs["x"] = locs.loc[0, "x"] + cumxspeeds
+    locs["y"] = locs.loc[0, "y"] + cumyspeeds
+    return locs
+
+
+def add_bearings(locdata,
+                 eta=0.005):
+    locdata["z"] = (locdata["y"]
+                    / locdata["x"]).apply(
         lambda u: zfunct(eta, u))
-    # Pour z, on devrait remplacer par:
-    #  for i in range(0, T+1):
-    #    data["z"][i] = math.atan(data["y"][i]/data["x"][i]) + np.random.normal(0, eta ** 2)
-    # ta fonction précédente me produit un bug si les vitesse étaient différentes de 0
-    
-    return data
+    return locdata
+
+
+def loc_data(x0,
+             y0,
+             xp0,
+             yp0,
+             T,
+             tau=1000,
+             eta=0.005):
+    speed = speed_data(xp0, yp0, T, tau)
+    locs = loc_from_speed_data(speed, x0, y0)
+    locs = add_bearings(locs, eta)
+    return locs
+
 
 
 

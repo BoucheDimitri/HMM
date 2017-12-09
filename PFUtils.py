@@ -6,6 +6,11 @@ def normalize_weights(weights):
     return (1/np.sum(weights))*nweights
 
 
+def norm_exp_logweights(lw):
+    w = np.exp(lw)
+    return w/np.sum(w)
+
+
 def multi_resampling(particles, weights):
     """
     Perform multinomial resampling
@@ -18,12 +23,9 @@ def multi_resampling(particles, weights):
     multi = np.random.multinomial(npartis, weights)
     resampled = np.zeros((1, particles.shape[1]))
     print(resampled)
-    loc = 0
     for i in range(0, npartis):
         nrep = multi[i]
         reps = np.tile(particles[i, :], (nrep, 1))
-        print(reps.shape)
-        print(resampled.shape)
         resampled = np.append(resampled, reps, axis=0)
     return resampled[1:, :]
 
@@ -31,11 +33,11 @@ def multi_resampling(particles, weights):
 
 #Test part for multinomial resampling
 #To remove
-#particules = np.zeros((10, 4))
-#for i in range(0, 10):
-#particules[i, :] = i*np.ones((1, 4))
-#w = np.array([0.1, 0.3, 0.05, 0.05, 0.3, 0, 0, 0.1, 0.1, 0])
-#res = multi_resampling(particules, w)
+particules = np.zeros((20, 4))
+for i in range(0, 20):
+    particules[i, :] = i*np.ones((1, 4))
+    w = np.array([0.25, 0, 0, 0, 0, 0.25, 0, 0, 0, 0, 0.25, 0, 0, 0, 0, 0.25, 0, 0, 0, 0])
+res = multi_resampling(particules, w)
 
 
 #Test for weights_normalization
