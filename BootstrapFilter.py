@@ -115,19 +115,22 @@ def bootstrap_filter(mprior, stdprior, zs, N, tau, eta):
     return particleslist, weightslist
 
 #eta = std of noise in measurement
-eta = 0.0005
+eta = 0.005
 #tau is such that math.sqrt(1/tau) is the std for speeds
-tau = 100000
+tau = 1000000
 #N is the number of particles
 N = 1000
 #T is the number of periods
 T = 100
 #Initial conditions
-x0 = 20
-y0 = 20
+x0 = 3
+y0 = 5
 xp0 = 0.002
 yp0 = -0.013
-mprior = [20.01, 19.6, 0.002, -0.013]
+#noise on initial position
+mux = 0.01
+muy = -0.4
+mprior = [x0 + mux, y0 + muy, 0.002, -0.013]
 stdprior = [0.04, 0.4, 0.003, 0.003]
 
 
@@ -142,28 +145,6 @@ means = np.array([np.mean(a, axis=0) for a in allparticles])
 varw = [np.var(w) for w in allweights]
 
 
-
-plt.scatter(means[:, 0], means[:, 1], label="particle_means")
-plt.scatter(data["x"][1:], data["y"][1:], label="real_trajectory")
+plt.plot(means[:, 0], means[:, 1], label="particle_means", marker="o")
+plt.plot(data["x"][1:], data["y"][1:], label="real_trajectory",marker="o")
 plt.legend()
-
-
-
-plt.scatter(data.loc[1, "x"], data.loc[1, "y"])
-plt.scatter(data.loc[2, "x"], data.loc[2, "y"])
-plt.scatter(data.loc[3, "x"], data.loc[3, "y"])
-plt.scatter(data.loc[4, "x"], data.loc[4, "y"])
-plt.scatter(allparticles[1][:, 0], allparticles[1][:, 1], s=1, label="1")
-plt.scatter(allparticles[2][:, 0], allparticles[2][:, 1], s=1, label="2")
-plt.scatter(allparticles[3][:, 0], allparticles[3][:, 1], s=1, label="3")
-
-plt.scatter(data.loc[50, "x"], data.loc[50, "y"])
-plt.scatter(allparticles[50][:, 0], allparticles[50][:, 1], s=1, label="50")
-
-
-plt.scatter(allparticles[100][:, 0], allparticles[100][:, 1], s=1, label="100")
-plt.scatter(allparticles[150][:, 0], allparticles[150][:, 1], s=1, label="150")
-plt.scatter(allparticles[200][:, 0], allparticles[200][:, 1], s=1, label="200")
-plt.legend()
-
-plt.plot(data["x"], data["y"])
