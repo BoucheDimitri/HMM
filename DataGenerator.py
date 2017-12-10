@@ -4,7 +4,7 @@ import math
 
 
 def zfunct(z, eta):
-    return math.atan(z) + np.random.normal(0, eta*eta)
+    return math.atan(z) + np.random.normal(0, eta)
 
 
 def speed_data(xp0,
@@ -19,10 +19,10 @@ def speed_data(xp0,
     for t in range(1, T):
         xpt = np.random.normal(
             speeds.get_value(t - 1, "xp"),
-            1 / tau)
+            math.sqrt(1 / tau))
         ypt = np.random.normal(
             speeds.get_value(t - 1, "yp"),
-            1 / tau)
+            math.sqrt(1 / tau))
         speeds.set_value(t, "xp", xpt)
         speeds.set_value(t, "yp", ypt)
     return speeds

@@ -22,7 +22,6 @@ def multi_resampling(particles, weights):
     npartis = particles.shape[0]
     multi = np.random.multinomial(npartis, weights)
     resampled = np.zeros((1, particles.shape[1]))
-    print(resampled)
     for i in range(0, npartis):
         nrep = multi[i]
         reps = np.tile(particles[i, :], (nrep, 1))

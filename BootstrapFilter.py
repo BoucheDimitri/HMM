@@ -13,7 +13,6 @@ def logprop_gauss_ppf(x, m, sigma):
 def one_logweight(particle, z, eta):
     m = math.atan(particle[1]/particle[0])
     lw = logprop_gauss_ppf(z, m, eta)
-    print(lw)
     return lw
 
 
@@ -37,7 +36,6 @@ def transition(particle, tau):
     x = particle[0] + particle[2]
     y = particle[1] + particle[3]
     moved = np.array([x, y, xp, yp])
-    print(np.reshape(moved, (1, 4)))
     return np.reshape(moved, (1, 4))
 
 
@@ -60,6 +58,15 @@ def transitions(particles, tau):
 
 
 def bootstrap_initialization(mprior, stdprior, z1, N, eta):
+    """
+
+    :param mprior:
+    :param stdprior:
+    :param z1:
+    :param N:
+    :param eta:
+    :return:
+    """
     x0s = np.random.normal(mprior[0], stdprior[0], N)
     y0s = np.random.normal(mprior[1], stdprior[1], N)
     xp0s = np.random.normal(mprior[2], stdprior[2], N)
@@ -102,8 +109,8 @@ def bootstrap_filter(mprior, stdprior, zs, N, eta, tau):
 
 
 
-data = datagenerator.loc_data(20, 20, 0.002, -0.013, 100)
-mprior = [20, 20, 0.002, -0.013]
+data = datagenerator.loc_data(20, 20, 0.002, -0.013, 100, 100, 0.0005)
+mprior = [20.01, 19.6, 0.002, -0.013]
 stdprior = [0.04, 0.4, 0.003, 0.003]
 #Delete first observation
 zs = data["z"].as_matrix()[1:]
@@ -112,9 +119,14 @@ zs = data["z"].as_matrix()[1:]
 allparticles, allweights = bootstrap_filter(mprior, stdprior, zs, 1000, 0.005, 1000)
 
 means = np.array([np.mean(a, axis=0) for a in allparticles])
+varw = [np.var(w) for w in allweights]
+
+
+
 plt.scatter(means[:, 0], means[:, 1], label="particle_means")
 plt.scatter(data["x"][1:], data["y"][1:], label="real_trajectory")
 plt.legend()
+
 
 
 plt.scatter(data.loc[1, "x"], data.loc[1, "y"])
