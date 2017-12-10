@@ -49,7 +49,7 @@ def add_bearings(locdata,
                  eta=0.005):
     locdata["z"] = (locdata["y"]
                     / locdata["x"]).apply(
-        lambda u: zfunct(eta, u))
+        lambda u: zfunct(u, eta))
     return locdata
 
 
