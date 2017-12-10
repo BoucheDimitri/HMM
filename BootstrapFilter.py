@@ -4,10 +4,17 @@ import PFUtils as pfutils
 import DataGenerator as datagenerator
 import importlib
 import matplotlib.pyplot as plt
+import math
+
+
+#Make sure the last version of
+#pfutils and datagenerator are used
+importlib.reload(datagenerator)
+importlib.reload(pfutils)
 
 
 def logprop_gauss_ppf(x, m, sigma):
-    return -(x-m)*(x-m)/(2*sigma)
+    return -(x-m)*(x-m)/(2*sigma*sigma)
 
 
 def one_logweight(particle, z, eta):
@@ -31,10 +38,12 @@ def transition(particle, tau):
     :param tau:
     :return:
     """
-    xp = np.random.normal(particle[2], 1/tau)
-    yp = np.random.normal(particle[3], 1/tau)
-    x = particle[0] + particle[2]
-    y = particle[1] + particle[3]
+    xp = np.random.normal(particle[2],
+                          math.sqrt(1 / tau))
+    yp = np.random.normal(particle[3],
+                          math.sqrt(1 / tau))
+    x = particle[0] + xp
+    y = particle[1] + yp
     moved = np.array([x, y, xp, yp])
     return np.reshape(moved, (1, 4))
 
@@ -78,20 +87,20 @@ def bootstrap_initialization(mprior, stdprior, z1, N, eta):
     xp0s = xp0s.reshape((N, 1))
     yp0s = yp0s.reshape((N, 1))
     particles = np.concatenate((x1s, y1s, xp0s, yp0s), axis=1)
-    newweights = all_logweights(particles, eta, z1)
+    newweights = all_logweights(particles, z1, eta)
     normalizedweights = pfutils.norm_exp_logweights(newweights)
     return particles, normalizedweights
 
 
-def bootstrap_iteration(previouspartis, z, previousw, eta, tau):
+def bootstrap_iteration(previouspartis, z, previousw, tau, eta):
     resampled = pfutils.multi_resampling(previouspartis, previousw)
     moved = transitions(resampled, tau)
-    newweights = all_logweights(moved, eta, z)
+    newweights = all_logweights(moved, z, eta)
     normalizedweights = pfutils.norm_exp_logweights(newweights)
     return moved, normalizedweights
 
 
-def bootstrap_filter(mprior, stdprior, zs, N, eta, tau):
+def bootstrap_filter(mprior, stdprior, zs, N, tau, eta):
     particleslist = []
     weightslist = []
     particles, weights = bootstrap_initialization(mprior, stdprior, zs[0], N, eta)
@@ -99,24 +108,35 @@ def bootstrap_filter(mprior, stdprior, zs, N, eta, tau):
     weightslist.append(weights)
     niter = zs.shape[0]
     for i in range(0, niter):
-        particles, weights = bootstrap_iteration(particles, zs[i], weights, eta, tau)
+        particles, weights = bootstrap_iteration(particles, zs[i], weights, tau, eta)
         particleslist.append(particles)
         weightslist.append(weights)
+        print(str(i) + "-th iteration")
     return particleslist, weightslist
 
-
-
-
-
-
-data = datagenerator.loc_data(20, 20, 0.002, -0.013, 100, 100, 0.0005)
+#eta = std of noise in measurement
+eta = 0.0005
+#tau is such that math.sqrt(1/tau) is the std for speeds
+tau = 100000
+#N is the number of particles
+N = 1000
+#T is the number of periods
+T = 100
+#Initial conditions
+x0 = 20
+y0 = 20
+xp0 = 0.002
+yp0 = -0.013
 mprior = [20.01, 19.6, 0.002, -0.013]
 stdprior = [0.04, 0.4, 0.003, 0.003]
+
+
+data = datagenerator.loc_data(x0, y0, xp0, yp0, T, tau, eta)
 #Delete first observation
 zs = data["z"].as_matrix()[1:]
-#initp, initw = bootstrap_initialization(mprior, stdprior, zs[0], 1000, 0.005)
+#initp, initw = bootstrap_initialization(mprior, stdprior, zs[0], tau, eta)
 #p, w = bootstrap_iteration(initp, zs[1], initw, 0.005, 1000)
-allparticles, allweights = bootstrap_filter(mprior, stdprior, zs, 1000, 0.005, 1000)
+allparticles, allweights = bootstrap_filter(mprior, stdprior, zs, N, tau, eta)
 
 means = np.array([np.mean(a, axis=0) for a in allparticles])
 varw = [np.var(w) for w in allweights]
