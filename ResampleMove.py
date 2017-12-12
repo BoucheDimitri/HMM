@@ -51,8 +51,8 @@ def particle_to_xyvecs(particle):
     :param particle:
     :return:
     """
-    x = particle[ :particle.shape[0] // 2]
-    y = particle[particle.shape[0] // 2: ]
+    x = particle[ :particle.shape[0] // 2].copy()
+    y = particle[particle.shape[0] // 2: ].copy()
     return x, y
 
 
@@ -77,6 +77,32 @@ def one_logweight(particle, zk, tau, eta):
                              yps[-2],
                              math.sqrt(1 / tau))
     return np.float(pik - pikminus1 + lpzk - lpxpk - lpypk)
+
+
+def all_logweights(particles, zk, tau, eta):
+    npartis = particles.shape[0]
+    lw = np.zeros((npartis, ))
+    for i in range(0, npartis):
+        lw[i] = one_logweight(particles[i, :], zk, tau, eta)
+    return lw
+
+
+def augment_one_particle(particle, tau):
+    x, y = particle_to_xyvecs(particle)
+    xpaug = np.random.normal(x[-1], math.sqrt(1 / tau))
+    ypaug = np.random.normal(y[-1], math.sqrt(1 / tau))
+    x = np.append(x, xpaug)
+    y = np.append(y, ypaug)
+    return np.concatenate((x, y))
+
+
+def augment_all_particles(particles, tau):
+    npartis = particles.shape[0]
+    ndims = particles.shape[1]
+    augmented = np.zeros((npartis, ndims + 2))
+    for i in range(0, npartis):
+        augmented[i, :] = augment_one_particle(particles[i, :], tau)
+    return augmented
 
 
 def initialization(mprior, stdprior, N):
@@ -114,4 +140,14 @@ toyparticle = np.append(toyparticle, np.array([data.loc[1:20, "yp"]]))
 
 lw = one_logweight(toyparticle, data.loc[20, "z"], tau, eta)
 
+dd = augment_one_particle(toyparticle, tau)
+
 x, y = particle_to_xyvecs(toyparticle)
+
+toyparticles = np.transpose(np.repeat(
+    toyparticle.reshape(
+        (toyparticle.shape[0], 1)),
+    100,
+    axis=1))
+
+ddd = augment_all_particles(toyparticles, tau)
