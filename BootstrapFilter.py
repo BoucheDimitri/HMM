@@ -92,23 +92,41 @@ def bootstrap_initialization(mprior, stdprior, z1, N, eta):
     return particles, normalizedweights
 
 
-def bootstrap_iteration(previouspartis, z, previousw, tau, eta):
-    resampled = pfutils.multi_resampling(previouspartis, previousw)
+def bootstrap_iteration(previouspartis,
+                        z,
+                        previousw,
+                        tau,
+                        eta,
+                        resampling="stratified"):
+    if resampling == "stratified":
+        resampled = pfutils.stratified_resampling(previouspartis, previousw)
+    else :
+        resampled = pfutils.multi_resampling(previouspartis, previousw)
     moved = transitions(resampled, tau)
     newweights = all_logweights(moved, z, eta)
     normalizedweights = pfutils.norm_exp_logweights(newweights)
     return moved, normalizedweights
 
 
-def bootstrap_filter(mprior, stdprior, zs, N, tau, eta):
+def bootstrap_filter(mprior, stdprior, zs, N, tau, eta,
+                     resampling="stratified"):
     particleslist = []
     weightslist = []
-    particles, weights = bootstrap_initialization(mprior, stdprior, zs[0], N, eta)
+    particles, weights = bootstrap_initialization(mprior,
+                                                  stdprior,
+                                                  zs[0],
+                                                  N,
+                                                  eta)
     particleslist.append(particles)
     weightslist.append(weights)
     niter = zs.shape[0]
     for i in range(0, niter):
-        particles, weights = bootstrap_iteration(particles, zs[i], weights, tau, eta)
+        particles, weights = bootstrap_iteration(particles,
+                                                 zs[i],
+                                                 weights,
+                                                 tau,
+                                                 eta,
+                                                 resampling)
         particleslist.append(particles)
         weightslist.append(weights)
         print(str(i) + "-th iteration")
@@ -139,12 +157,12 @@ data = datagenerator.loc_data(x0, y0, xp0, yp0, T, tau, eta)
 zs = data["z"].as_matrix()[1:]
 #initp, initw = bootstrap_initialization(mprior, stdprior, zs[0], tau, eta)
 #p, w = bootstrap_iteration(initp, zs[1], initw, 0.005, 1000)
-allparticles, allweights = bootstrap_filter(mprior, stdprior, zs, N, tau, eta)
+allparticles, allweights = bootstrap_filter(mprior, stdprior, zs, N, tau, eta, "multinomial")
 
 means = np.array([np.mean(a, axis=0) for a in allparticles])
 varw = [np.var(w) for w in allweights]
 
-
+plt.figure()
 plt.plot(means[:, 0], means[:, 1], label="particle_means", marker="o")
 plt.plot(data["x"][1:], data["y"][1:], label="real_trajectory",marker="o")
 plt.legend()
