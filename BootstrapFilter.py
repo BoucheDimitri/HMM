@@ -128,8 +128,8 @@ y0 = 5
 xp0 = 0.002
 yp0 = -0.013
 #noise on initial position
-mux = 0.01
-muy = -0.4
+mux = 0.001
+muy = -0.1
 mprior = [x0 + mux, y0 + muy, 0.002, -0.013]
 stdprior = [0.04, 0.4, 0.003, 0.003]
 

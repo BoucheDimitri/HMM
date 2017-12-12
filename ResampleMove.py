@@ -8,7 +8,7 @@ import math
 
 
 def logprop_gauss_ppf(x, m, sigma):
-    return -math.log(sigma)-(x-m)*(x-m)/(2*sigma*sigma)
+    return -(x-m)*(x-m)/(2*sigma*sigma)
 
 
 def logprop_pz(z, y, x, eta):
@@ -54,6 +54,20 @@ def particle_to_xyvecs(particle):
     x = particle[ :particle.shape[0] // 2].copy()
     y = particle[particle.shape[0] // 2: ].copy()
     return x, y
+
+
+def one_logweight_init(particle, z0, eta):
+    m = math.atan(particle[0]/particle[2])
+    lw = logprop_gauss_ppf(z0, m, eta)
+    return lw
+
+
+def all_logweights_init(particles, z0, eta):
+    npartis = particles.shape[0]
+    lw = np.zeros((npartis, ))
+    for i in range(0, npartis):
+        lw[i] = one_logweight_init(particles[i, :], z0, eta)
+    return lw
 
 
 def one_logweight(particle, zk, tau, eta):
@@ -105,11 +119,14 @@ def augment_all_particles(particles, tau):
     return augmented
 
 
-def initialization(mprior, stdprior, N):
-    x0s = np.random.normal(mprior[0], stdprior[0], N)
-    y0s = np.random.normal(mprior[1], stdprior[1], N)
-    xp0s = np.random.normal(mprior[2], stdprior[2], N)
-    yp0s = np.random.normal(mprior[3], stdprior[3], N)
+def initialization(mprior, stdprior, z0, N, eta):
+    x0s = np.random.normal(mprior[0], stdprior[0], (N, 1))
+    y0s = np.random.normal(mprior[1], stdprior[1], (N, 1))
+    xp0s = np.random.normal(mprior[2], stdprior[2], (N, 1))
+    yp0s = np.random.normal(mprior[3], stdprior[3], (N, 1))
+    particles = np.concatenate((x0s, xp0s, y0s, yp0s), axis=1)
+    logweights = all_logweights_init(particles, z0, eta)
+    return particles, logweights
 
 
 
@@ -127,10 +144,10 @@ y0 = 5
 xp0 = 0.002
 yp0 = -0.013
 #noise on initial position
-mux = 0.01
-muy = -0.4
+mux = 0
+muy = 0
 mprior = [x0 + mux, y0 + muy, 0.002, -0.013]
-stdprior = [0.04, 0.4, 0.003, 0.003]
+stdprior = [0.04, 0.4, 0.001, 0.001]
 data = datagenerator.loc_data(x0, y0, xp0, yp0, T, tau, eta)
 
 toyparticle = np.array([data.loc[0, "x"]])
@@ -151,3 +168,7 @@ toyparticles = np.transpose(np.repeat(
     axis=1))
 
 ddd = augment_all_particles(toyparticles, tau)
+
+zs = data["z"].as_matrix()
+
+p, w = initialization(mprior, stdprior, zs[0], 1000, 0.005)

@@ -11,6 +11,15 @@ def speed_data(xp0,
                yp0,
                T,
                tau=1000):
+    """
+    Generate a dataframe of speed data
+    as described in Berzuini and Zilks (1999)
+    :param xp0: float, initial speed in x
+    :param yp0: float, initial speed in y
+    :param T: int, number of periods
+    :param tau: float, inverse of variance of speed
+    :return: pandas.core.frame.DataFrame, the data frame of speed data
+    """
     speeds = pd.DataFrame(columns=["xp", "yp"],
                           index=range(0, T),
                           dtype=float)
@@ -31,6 +40,16 @@ def speed_data(xp0,
 def loc_from_speed_data(speeds,
                         x0,
                         y0):
+    """
+    Generate localization from a dataframe of speeds
+    and initial positions
+    :param speeds: pandas.core.frame.DataFrame, dataframe of speed
+    as returned by function speed_data
+    :param x0: float, initial position in x
+    :param y0: float, initial position in y
+    :return: pandas.core.frame.DataFrame, dataframe of speeds and
+    positions
+    """
     T = speeds.shape[0]
     locs = pd.DataFrame(columns=["x", "y"],
                         index=range(0, T))

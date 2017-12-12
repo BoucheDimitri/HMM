@@ -1,14 +1,44 @@
 import numpy as np
-
-
-def normalize_weights(weights):
-    nweights = np.copy(weights)
-    return (1/np.sum(weights))*nweights
+import bisect
 
 
 def norm_exp_logweights(lw):
-    w = np.exp(lw)
+    """
+    Compute a quantity propotionnal to the weights
+    up to the multiplicative constant exp(max(lw))
+    which does not matter since it simplifies out
+    in the normalization, but it limits rounding errors
+    which may occurs since the weights are small quantities
+    :param lw: np.array, array of logweights
+    :return:
+    """
+    w = np.exp(lw-np.max(lw))
     return w/np.sum(w)
+
+
+def n_stratified(weights):
+    N = weights.shape[0]
+    uniforms = []
+    for n in range(1, N+1):
+        uniforms.append(np.random.uniform((n-1)/N, n/N))
+    uniforms = np.array(uniforms)
+    cumweights = np.cumsum(weights)
+    inds = np.zeros((N, 1))
+    multi = np.zeros((N, ))
+    count = 0
+    for u in uniforms:
+        index = bisect.bisect(cumweights, u)
+        inds[count] = index + 1
+        count += 1
+    for n in range(1, N+1):
+        multi[n-1] = np.argwhere(inds == n).shape[0]
+    return [np.int(m) for m in multi]
+
+
+def n_multinomial(weights):
+    N = weights.shape[0]
+    multi = np.random.multinomial(N, weights)
+    return multi
 
 
 def multi_resampling(particles, weights):
@@ -19,14 +49,40 @@ def multi_resampling(particles, weights):
     :return: np.array with shape=(n_particles, dim_particles) :
     the resampled particles
     """
-    npartis = particles.shape[0]
-    multi = np.random.multinomial(npartis, weights)
+    N = particles.shape[0]
+    multi = n_multinomial(weights)
     resampled = np.zeros((1, particles.shape[1]))
-    for i in range(0, npartis):
+    for i in range(0, N):
         nrep = multi[i]
         reps = np.tile(particles[i, :], (nrep, 1))
         resampled = np.append(resampled, reps, axis=0)
     return resampled[1:, :]
+
+
+def stratified_resampling(particles, weights):
+    """
+    Perform multinomial resampling
+    :param particles: np.array with shape=(n_particles, dim_particles)
+    :param weights: np.array with shape=(1, nparticles) or list
+    :return: np.array with shape=(n_particles, dim_particles) :
+    the resampled particles
+    """
+    N = particles.shape[0]
+    multi = n_stratified(weights)
+    resampled = np.zeros((1, particles.shape[1]))
+    for i in range(0, N):
+        nrep = multi[i]
+        reps = np.tile(particles[i, :], (nrep, 1))
+        resampled = np.append(resampled, reps, axis=0)
+    return resampled[1:, :]
+
+
+
+
+
+
+
+
 
 
 
@@ -35,8 +91,10 @@ def multi_resampling(particles, weights):
 particules = np.zeros((20, 4))
 for i in range(0, 20):
     particules[i, :] = i*np.ones((1, 4))
-    w = np.array([0.25, 0, 0, 0, 0, 0.25, 0, 0, 0, 0, 0.25, 0, 0, 0, 0, 0.25, 0, 0, 0, 0])
-res = multi_resampling(particules, w)
+w = np.array([0.25, 0, 0, 0, 0, 0.25, 0, 0, 0, 0, 0.25, 0, 0, 0, 0, 0.25, 0, 0, 0, 0])
+
+m = n_stratified(w)
+res = stratified_resampling(particules, w)
 
 
 #Test for weights_normalization
