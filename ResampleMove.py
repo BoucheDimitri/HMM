@@ -125,8 +125,69 @@ def initialization(mprior, stdprior, z0, N, eta):
     xp0s = np.random.normal(mprior[2], stdprior[2], (N, 1))
     yp0s = np.random.normal(mprior[3], stdprior[3], (N, 1))
     particles = np.concatenate((x0s, xp0s, y0s, yp0s), axis=1)
-    logweights = all_logweights_init(particles, z0, eta)
-    return particles, logweights
+    #logweights = all_logweights_init(particles, z0, eta)
+    return particles#, logweights
+
+
+def resample_move_iteration(previouspartis,
+                            z,
+                            eta,
+                            tau,
+                            resampling="stratified"):
+    augmented = augment_all_particles(previouspartis, tau)
+    lw = all_logweights(augmented, z, tau, eta)
+    normw = pfutils.norm_exp_logweights(lw)
+    if resampling == "stratified":
+        resampled = pfutils.stratified_resampling(augmented, normw)
+    else:
+        resampled = pfutils.multi_resampling(augmented, normw)
+    return resampled, normw
+
+
+def resample_move(mprior,
+                  stdprior,
+                  zs,
+                  N,
+                  tau,
+                  eta,
+                  resampling):
+    particles = initialization(mprior, stdprior, zs[0], N, eta)
+    T = zs.shape[0]
+    allparticles = []
+    allweights = []
+    allparticles.append(particles)
+    for t in range(1, T):
+        particles, weights = resample_move_iteration(
+            particles,
+            zs[t],
+            eta,
+            tau,
+            resampling)
+        allparticles.append(particles)
+        allweights.append(weights)
+        print(t)
+    return allparticles, allweights
+
+
+def extract_loc_means(allparticles):
+    locmeansx = []
+    locmeansy = []
+    for particle in allparticles:
+        meanparticle = np.mean(particle, axis=0)
+        x, y = particle_to_xyvecs(meanparticle)
+        xloc = x[0] + np.sum(x[1:])
+        yloc = y[0] + np.sum(y[1:])
+        locmeansx.append(xloc)
+        locmeansy.append(yloc)
+    return locmeansx, locmeansy
+
+
+
+
+
+
+
+
 
 
 
@@ -146,9 +207,25 @@ yp0 = -0.013
 #noise on initial position
 mux = 0
 muy = 0
-mprior = [x0 + mux, y0 + muy, 0.002, -0.013]
+mprior = [x0 + mux, y0 + muy, xp0, yp0]
 stdprior = [0.04, 0.4, 0.001, 0.001]
 data = datagenerator.loc_data(x0, y0, xp0, yp0, T, tau, eta)
+zs = data["z"].as_matrix()
+
+allparticles, allweights = resample_move(mprior, stdprior, zs, N, tau, eta, "stratified")
+
+
+plt.plot(data["x"], data["y"], marker="o", label="True trajectory")
+
+means = extract_loc_means(allparticles)
+plt.plot(means[0], means[1], marker="o", label="Particle means")
+
+plt.legend()
+
+
+
+
+
 
 toyparticle = np.array([data.loc[0, "x"]])
 toyparticle = np.append(toyparticle, np.array([data.loc[1:20, "xp"]]))
@@ -172,3 +249,5 @@ ddd = augment_all_particles(toyparticles, tau)
 zs = data["z"].as_matrix()
 
 p, w = initialization(mprior, stdprior, zs[0], 1000, 0.005)
+
+nw = pfutils.norm_exp_logweights(w)
