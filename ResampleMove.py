@@ -56,20 +56,6 @@ def particle_to_xyvecs(particle):
     return x, y
 
 
-def one_logweight_init(particle, z0, eta):
-    m = math.atan(particle[0]/particle[2])
-    lw = logprop_gauss_ppf(z0, m, eta)
-    return lw
-
-
-def all_logweights_init(particles, z0, eta):
-    npartis = particles.shape[0]
-    lw = np.zeros((npartis, ))
-    for i in range(0, npartis):
-        lw[i] = one_logweight_init(particles[i, :], z0, eta)
-    return lw
-
-
 def one_logweight(particle, zk, tau, eta):
     k = particle.shape[0] - 4
     x, y = particle_to_xyvecs(particle)
@@ -119,28 +105,28 @@ def augment_all_particles(particles, tau):
     return augmented
 
 
-def initialization(mprior, stdprior, z0, N, eta):
+def initialization(mprior, stdprior, N):
     x0s = np.random.normal(mprior[0], stdprior[0], (N, 1))
     y0s = np.random.normal(mprior[1], stdprior[1], (N, 1))
     xp0s = np.random.normal(mprior[2], stdprior[2], (N, 1))
     yp0s = np.random.normal(mprior[3], stdprior[3], (N, 1))
     particles = np.concatenate((x0s, xp0s, y0s, yp0s), axis=1)
-    #logweights = all_logweights_init(particles, z0, eta)
-    return particles#, logweights
+    return particles
 
 
 def resample_move_iteration(previouspartis,
                             z,
-                            eta,
                             tau,
+                            eta,
+                            N=None,
                             resampling="stratified"):
     augmented = augment_all_particles(previouspartis, tau)
     lw = all_logweights(augmented, z, tau, eta)
     normw = pfutils.norm_exp_logweights(lw)
     if resampling == "stratified":
-        resampled = pfutils.stratified_resampling(augmented, normw)
+        resampled = pfutils.stratified_resampling(augmented, normw, N)
     else:
-        resampled = pfutils.multi_resampling(augmented, normw)
+        resampled = pfutils.multi_resampling(augmented, normw, N)
     return resampled, normw
 
 
@@ -150,8 +136,9 @@ def resample_move(mprior,
                   N,
                   tau,
                   eta,
+                  deltaN,
                   resampling):
-    particles = initialization(mprior, stdprior, zs[0], N, eta)
+    particles = initialization(mprior, stdprior, N)
     T = zs.shape[0]
     allparticles = []
     allweights = []
@@ -160,8 +147,9 @@ def resample_move(mprior,
         particles, weights = resample_move_iteration(
             particles,
             zs[t],
-            eta,
             tau,
+            eta,
+            N + t*deltaN,
             resampling)
         allparticles.append(particles)
         allweights.append(weights)
@@ -198,7 +186,7 @@ tau = 1000000
 #N is the number of particles
 N = 1000
 #T is the number of periods
-T = 100
+T = 50
 #Initial conditions
 x0 = 3
 y0 = 5
@@ -212,7 +200,7 @@ stdprior = [0.04, 0.4, 0.001, 0.001]
 data = datagenerator.loc_data(x0, y0, xp0, yp0, T, tau, eta)
 zs = data["z"].as_matrix()
 
-allparticles, allweights = resample_move(mprior, stdprior, zs, N, tau, eta, "stratified")
+allparticles, allweights = resample_move(mprior, stdprior, zs, N, tau, eta, 0, "multinomial")
 
 
 plt.plot(data["x"], data["y"], marker="o", label="True trajectory")

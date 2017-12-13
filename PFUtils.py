@@ -16,9 +16,11 @@ def norm_exp_logweights(lw):
     return w/np.sum(w)
 
 
-def n_stratified(weights):
-    N = weights.shape[0]
+def n_stratified(weights, N=None):
+    if not N:
+        N = weights.shape[0]
     uniforms = []
+   # Nw = weights.shape[0]
     for n in range(1, N+1):
         uniforms.append(np.random.uniform((n-1)/N, n/N))
     uniforms = np.array(uniforms)
@@ -35,13 +37,14 @@ def n_stratified(weights):
     return [np.int(m) for m in multi]
 
 
-def n_multinomial(weights):
-    N = weights.shape[0]
+def n_multinomial(weights, N=None):
+    if not N:
+        N = weights.shape[0]
     multi = np.random.multinomial(N, weights)
     return multi
 
 
-def multi_resampling(particles, weights):
+def multi_resampling(particles, weights, N=None):
     """
     Perform multinomial resampling
     :param particles: np.array with shape=(n_particles, dim_particles)
@@ -49,17 +52,18 @@ def multi_resampling(particles, weights):
     :return: np.array with shape=(n_particles, dim_particles) :
     the resampled particles
     """
-    N = particles.shape[0]
-    multi = n_multinomial(weights)
+    if not N:
+        N = particles.shape[0]
+    multi = n_multinomial(weights, N)
     resampled = np.zeros((1, particles.shape[1]))
-    for i in range(0, N):
+    for i in range(0, multi.shape[0]):
         nrep = multi[i]
         reps = np.tile(particles[i, :], (nrep, 1))
         resampled = np.append(resampled, reps, axis=0)
     return resampled[1:, :]
 
 
-def stratified_resampling(particles, weights):
+def stratified_resampling(particles, weights, N=None):
     """
     Perform multinomial resampling
     :param particles: np.array with shape=(n_particles, dim_particles)
@@ -67,10 +71,11 @@ def stratified_resampling(particles, weights):
     :return: np.array with shape=(n_particles, dim_particles) :
     the resampled particles
     """
-    N = particles.shape[0]
-    multi = n_stratified(weights)
+    if not N:
+        N = particles.shape[0]
+    multi = n_stratified(weights, N)
     resampled = np.zeros((1, particles.shape[1]))
-    for i in range(0, N):
+    for i in range(0, len(multi)):
         nrep = multi[i]
         reps = np.tile(particles[i, :], (nrep, 1))
         resampled = np.append(resampled, reps, axis=0)
@@ -88,13 +93,16 @@ def stratified_resampling(particles, weights):
 
 #Test part for multinomial resampling
 #To remove
-particules = np.zeros((20, 4))
+particles = np.zeros((20, 4))
 for i in range(0, 20):
-    particules[i, :] = i*np.ones((1, 4))
+    particles[i, :] = i*np.ones((1, 4))
 w = np.array([0.25, 0, 0, 0, 0, 0.25, 0, 0, 0, 0, 0.25, 0, 0, 0, 0, 0.25, 0, 0, 0, 0])
 
-m = n_stratified(w)
-res = stratified_resampling(particules, w)
+#dd = n_multinomial(w, 40)
+#res = stratified_resampling(particles, w, 40)
+
+#m = n_stratified(w, 40)
+#res = stratified_resampling(particules, w)
 
 
 #Test for weights_normalization
