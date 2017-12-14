@@ -104,6 +104,30 @@ def augment_all_particles(particles, tau):
         augmented[i, :] = augment_one_particle(particles[i, :], tau)
     return augmented
 
+#TODO: il y a visiblement un souci car toutes les particles sont pareils à chaque itération....
+
+def likelihood_ratio(particle1, particle2, tau):
+    x1, y1 = particle_to_xyvecs(particle1)
+    x2, y2 = particle_to_xyvecs(particle2)
+    xp1, yp1 = x1[1:], y1[1:]
+    xp2, yp2 = x2[1:], y2[1:]
+    lkl1 = logprop_prior_ppf(xp1, yp1, tau)
+    lkl2 = logprop_prior_ppf(xp2, yp2, tau)
+    logratio = lkl1 - lkl2
+    print (lkl1)
+    print(lkl2)
+    return np.exp(logratio)
+
+
+def rescale_one_particle(r1, particle):
+    lamb = np.random.uniform(r1, 1/r1)
+    u = np.random.uniform()
+    lklratio =
+
+
+def rescaling_move(r1, particles):
+
+
 
 def initialization(mprior, stdprior, N):
     x0s = np.random.normal(mprior[0], stdprior[0], (N, 1))
@@ -182,7 +206,7 @@ def extract_loc_means(allparticles):
 #eta = std of noise in measurement
 eta = 0.005
 #tau is such that math.sqrt(1/tau) is the std for speeds
-tau = 1000000
+tau = 1e6
 #N is the number of particles
 N = 1000
 #T is the number of periods

@@ -139,7 +139,7 @@ tau = 1000000
 #N is the number of particles
 N = 1000
 #T is the number of periods
-T = 100
+T = 50
 #Initial conditions
 x0 = 3
 y0 = 5
@@ -157,7 +157,7 @@ data = datagenerator.loc_data(x0, y0, xp0, yp0, T, tau, eta)
 zs = data["z"].as_matrix()[1:]
 #initp, initw = bootstrap_initialization(mprior, stdprior, zs[0], tau, eta)
 #p, w = bootstrap_iteration(initp, zs[1], initw, 0.005, 1000)
-allparticles, allweights = bootstrap_filter(mprior, stdprior, zs, N, tau, eta, "multinomial")
+allparticles, allweights = bootstrap_filter(mprior, stdprior, zs, N, tau, eta, "stratified")
 
 means = np.array([np.mean(a, axis=0) for a in allparticles])
 varw = [np.var(w) for w in allweights]
