@@ -43,7 +43,9 @@ def x_candidate(xps, a, b, r2):
 def y_candidate(xlocs, ypinit, a, b, zs, eta):
     candidate = ypinit.copy()
     tanmat = algtools.tan_matrix(a, b, zs)
+    #print(tanmat)
     mu = np.dot(tanmat, xlocs[a:b+1])
+    #print(mu)
     covmat = algtools.eta_matrix(b-a, eta)
     perturbation = np.random.multivariate_normal(mu, covmat)
     candidate[a:b] = perturbation
@@ -61,7 +63,8 @@ def perturbed_particle(particle, zs, a, b, r2, eta):
     ypcandidate = y_candidate(xlocs, yps, a, b, zs, eta)
     ycandidate = y.copy()
     ycandidate[1:] = ypcandidate
-    return np.concatenate((xcandidate, ycandidate))
+    #return np.concatenate((xcandidate, ycandidate))
+    return np.concatenate((xcandidate, y.copy()))
 
 
 def perturb_one_particle(particle, zs, a, b, r2, tau, eta):
@@ -69,7 +72,7 @@ def perturb_one_particle(particle, zs, a, b, r2, tau, eta):
     mhratio = probas.lkl_ratio(perturbed, particle, zs, tau, eta)
     arprob = min(1, mhratio)
     u = np.random.uniform()
-    print(arprob)
+    #print(arprob)
     if u < arprob:
         return perturbed
     else:

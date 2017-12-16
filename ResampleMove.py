@@ -160,8 +160,8 @@ allparticles, allweights = resample_move(locpriormean,
                                          N,
                                          tau,
                                          eta,
-                                         0.999,
-                                         0.0001,
+                                         0.9999,
+                                         1e-6,
                                          "stratified")
 
 plt.figure()
@@ -177,7 +177,12 @@ xps = x[1:]
 xc = x_candidate(xps, 15, 20, 0.01)
 
 
-particle1 = allparticles[10][1, :]
+particle1 = allparticles[25][400, :]
+particle1copy = particle1.copy()
 particle2 = allparticles[10][2, :]
+
+perturbed = moves.perturbed_particle(particle1, zs, 20, 25, 1e-6, 0.005)
+mhratio = probas.lkl_ratio(perturbed, particle1, zs, tau, eta)
+print(mhratio)
 
 aa = rescale_one_particle(0.75, particle1, zs, tau, eta)

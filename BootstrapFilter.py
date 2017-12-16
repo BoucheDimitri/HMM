@@ -155,6 +155,10 @@ zs = data["z"].as_matrix()[1:]
 #p, w = bootstrap_iteration(initp, zs[1], initw, 0.005, 1000)
 allparticles, allweights = bootstrap_filter(mprior, stdprior, zs, N, tau, eta, "stratified")
 
+parti = allparticles[20][0, :]
+
+perturb = moves.perturb_on
+
 means = np.array([np.mean(a, axis=0) for a in allparticles])
 varw = [np.var(w) for w in allweights]
 

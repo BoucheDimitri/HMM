@@ -14,12 +14,12 @@ def particle_to_xyvecs(particle):
     return x, y
 
 
-def tan_matrix(a, b, zs):
+def tan_matrix(a, b, zs, noise=0):
     tmat = np.zeros((b-a, b-a+1))
-    diag = [-math.tan(zs[a+i]) for i in range(0, b-a)]
+    diag = [-math.tan(zs[a+i] + np.random.normal(0, noise)) for i in range(0, b-a)]
     np.fill_diagonal(tmat, diag)
     fwdmat = np.zeros((b-a, b-a))
-    diagbis = [math.tan(zs[a+i+1]) for i in range(0, b-a)]
+    diagbis = [math.tan(zs[a+i+1] + np.random.normal(0, noise)) for i in range(0, b-a)]
     np.fill_diagonal(fwdmat, diagbis)
     fwdmat = np.concatenate((np.zeros((b-a, 1)), fwdmat), axis=1)
     return tmat + fwdmat
