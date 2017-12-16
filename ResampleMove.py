@@ -1,10 +1,10 @@
 import numpy as np
-import math
-import PFUtils as pfutils
-import DataGenerator as datagenerator
-import importlib
 import matplotlib.pyplot as plt
 import math
+
+import Probas as probas
+import Resampling as resampling
+import DataGenerator as datagenerator
 
 
 def particle_to_xyvecs(particle):
@@ -172,14 +172,15 @@ def lkl_ratio(particle1, particle2, zs, tau, eta):
 
 def rescale_one_particle(r1, particle, zs, tau, eta):
     lamb = np.random.uniform(r1, 1/r1)
-    rescaled = lamb*particle.copy()
+    rescaled = particle.copy()
+    rescaled *= lamb
     u = np.random.uniform()
     lklratio = lkl_ratio(rescaled, particle, zs, tau, eta)
     arprob = min(lklratio, 1)
     if u < arprob:
         return rescaled
     else:
-        return particle
+        return particle.copy()
 
 
 def rescale_all_particles(r1, particles, zs, tau, eta):
@@ -189,12 +190,20 @@ def rescale_all_particles(r1, particles, zs, tau, eta):
     return particles
 
 
-def initialization(mprior, stdprior, N):
-    x0s = np.random.normal(mprior[0], stdprior[0], (N, 1))
-    y0s = np.random.normal(mprior[1], stdprior[1], (N, 1))
-    xp0s = np.random.normal(mprior[2], stdprior[2], (N, 1))
-    yp0s = np.random.normal(mprior[3], stdprior[3], (N, 1))
-    particles = np.concatenate((x0s, xp0s, y0s, yp0s), axis=1)
+def init_locs(locmean, locstd, N):
+    x0s = np.random.normal(locmean[0], locstd[0], (N, 1))
+    y0s = np.random.normal(locmean[1], locstd[1], (N, 1))
+    return np.concatenate((x0s, y0s), axis=1)
+
+
+def init_speeds(initloc, speedmean, speedstd, N):
+    xp0s = np.random.normal(speedmean[0], speedstd[0], (N, 1))
+    yp0s = np.random.normal(speedmean[1], speedstd[1], (N, 1))
+    particles = np.concatenate((initloc[:, 0].reshape(N, 1),
+                                xp0s,
+                                initloc[:, 1].reshape(N, 1),
+                                yp0s),
+                               axis=1)
     return particles
 
 
@@ -203,47 +212,52 @@ def resample_move_iteration(previouspartis,
                             tau,
                             eta,
                             r1=0.9,
-                            N=None,
-                            resampling="stratified"):
+                            restype="stratified"):
     augmented = augment_all_particles(previouspartis, tau)
-    t = augmented.shape[1]//2
+    t = augmented.shape[1]//2 - 1
     lw = all_logweights(augmented, zs[t], tau, eta)
-    normw = pfutils.norm_exp_logweights(lw)
-    if resampling == "stratified":
-        resampled = pfutils.stratified_resampling(augmented, normw, N)
+    normw = probas.norm_exp_logweights(lw)
+    if restype == "stratified":
+        resampled = resampling.stratified_resampling(augmented, normw, N)
     else:
-        resampled = pfutils.multi_resampling(augmented, normw, N)
+        resampled = resampling.multi_resampling(augmented, normw, N)
     rescaled = rescale_all_particles(r1, resampled, zs, tau, eta)
-    return resampled, normw
+    return rescaled, normw
+    #return resampled, normw
 
 
-def resample_move(mprior,
-                  stdprior,
+def resample_move(locmean,
+                  locstd,
+                  speedmean,
+                  speedstd,
                   zs,
                   N,
                   tau,
                   eta,
                   r1,
-                  deltaN,
-                  resampling):
-    particles = initialization(mprior, stdprior, N)
-    T = zs.shape[0]
+                  restype):
     allparticles = []
     allweights = []
-    allparticles.append(particles)
-    for t in range(1, T-2):
+    T = zs.shape[0]
+    particles0 = init_locs(locmean, locstd, N)
+    allparticles.append(particles0)
+    particles1 = init_speeds(particles0,
+                             speedmean,
+                             speedstd,
+                             N)
+    allparticles.append(particles1)
+    for t in range(1, T-1):
         newparticles, weights = resample_move_iteration(
-            particles,
+            particles1,
             zs,
             tau,
             eta,
             r1,
-            N + t*deltaN,
-            resampling)
+            restype)
         allparticles.append(newparticles)
         allweights.append(weights)
-        del particles
-        particles = newparticles
+        del particles1
+        particles1 = newparticles
         print(t)
     return allparticles, allweights
 
@@ -286,12 +300,23 @@ yp0 = -0.013
 #noise on initial position
 mux = 0
 muy = 0
-mprior = [x0 + mux, y0 + muy, xp0, yp0]
-stdprior = [0.04, 0.4, 0.001, 0.001]
+locpriormean = [x0 + mux, y0 + muy]
+locpriorstd = [0.04, 0.4]
+speedpriormean = [xp0, yp0]
+speedpriorstd = [0.001, 0.001]
 data = datagenerator.loc_data(x0, y0, xp0, yp0, T, tau, eta)
 zs = data["z"].as_matrix()
 
-allparticles, allweights = resample_move(mprior, stdprior, zs, N, tau, eta, 1, 0, "stratified")
+allparticles, allweights = resample_move(locpriormean,
+                                         locpriorstd,
+                                         speedpriormean,
+                                         speedpriorstd,
+                                         zs,
+                                         N,
+                                         tau,
+                                         eta,
+                                         0.999,
+                                         "stratified")
 
 plt.figure()
 plt.plot(data["x"], data["y"], marker="o", label="True trajectory")

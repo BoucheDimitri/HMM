@@ -1,16 +1,12 @@
 import numpy as np
 import math
-import PFUtils as pfutils
+import Resampling as resampling
 import DataGenerator as datagenerator
+import Probas as probas
 import importlib
 import matplotlib.pyplot as plt
 import math
 
-
-#Make sure the last version of
-#pfutils and datagenerator are used
-importlib.reload(datagenerator)
-importlib.reload(pfutils)
 
 
 def logprop_gauss_ppf(x, m, sigma):
@@ -88,7 +84,7 @@ def bootstrap_initialization(mprior, stdprior, z1, N, eta):
     yp0s = yp0s.reshape((N, 1))
     particles = np.concatenate((x1s, y1s, xp0s, yp0s), axis=1)
     newweights = all_logweights(particles, z1, eta)
-    normalizedweights = pfutils.norm_exp_logweights(newweights)
+    normalizedweights = probas.norm_exp_logweights(newweights)
     return particles, normalizedweights
 
 
@@ -99,12 +95,12 @@ def bootstrap_iteration(previouspartis,
                         eta,
                         resampling="stratified"):
     if resampling == "stratified":
-        resampled = pfutils.stratified_resampling(previouspartis, previousw)
+        resampled = resampling.stratified_resampling(previouspartis, previousw)
     else :
-        resampled = pfutils.multi_resampling(previouspartis, previousw)
+        resampled = resampling.multi_resampling(previouspartis, previousw)
     moved = transitions(resampled, tau)
     newweights = all_logweights(moved, z, eta)
-    normalizedweights = pfutils.norm_exp_logweights(newweights)
+    normalizedweights = probas.norm_exp_logweights(newweights)
     return moved, normalizedweights
 
 
