@@ -48,7 +48,10 @@ def resample_move_iteration(previouspartis,
                             zs,
                             tau,
                             eta,
-                            r1=0.9,
+                            r1,
+                            r2,
+                            a,
+                            b,
                             restype="stratified"):
     augmented = augment_all_particles(previouspartis, tau)
     t = augmented.shape[1]//2 - 1
@@ -59,7 +62,8 @@ def resample_move_iteration(previouspartis,
     else:
         resampled = resampling.multi_resampling(augmented, normw, N)
     rescaled = moves.rescale_all_particles(r1, resampled, zs, tau, eta)
-    return rescaled, normw
+    perturbed = moves.pertub_all_particles(rescaled, zs, a, b, r2, tau, eta)
+    return perturbed, normw
     #return resampled, normw
 
 
@@ -72,6 +76,7 @@ def resample_move(locmean,
                   tau,
                   eta,
                   r1,
+                  r2,
                   restype):
     allparticles = []
     allweights = []
@@ -90,6 +95,9 @@ def resample_move(locmean,
             tau,
             eta,
             r1,
+            r2,
+            max(t-5, 0),
+            t,
             restype)
         allparticles.append(newparticles)
         allweights.append(weights)
@@ -153,6 +161,7 @@ allparticles, allweights = resample_move(locpriormean,
                                          tau,
                                          eta,
                                          0.999,
+                                         0.0001,
                                          "stratified")
 
 plt.figure()

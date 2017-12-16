@@ -1,4 +1,5 @@
-
+import math
+import numpy as np
 
 
 def particle_to_xyvecs(particle):
@@ -11,3 +12,21 @@ def particle_to_xyvecs(particle):
     x = particle[ :particle.shape[0] // 2].copy()
     y = particle[particle.shape[0] // 2: ].copy()
     return x, y
+
+
+def tan_matrix(a, b, zs):
+    tmat = np.zeros((b-a, b-a+1))
+    diag = [-math.tan(zs[a+i]) for i in range(0, b-a)]
+    np.fill_diagonal(tmat, diag)
+    fwdmat = np.zeros((b-a, b-a))
+    diagbis = [math.tan(zs[a+i+1]) for i in range(0, b-a)]
+    np.fill_diagonal(fwdmat, diagbis)
+    fwdmat = np.concatenate((np.zeros((b-a, 1)), fwdmat), axis=1)
+    return tmat + fwdmat
+
+
+def eta_matrix(t, eta):
+    mat = np.zeros((t, t))
+    np.fill_diagonal(mat, eta*eta)
+    return mat
+
