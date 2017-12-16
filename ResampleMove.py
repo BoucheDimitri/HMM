@@ -84,6 +84,11 @@ def c_matrix(t):
     return c
 
 
+def c_restriction(t, a, b):
+    c = c_matrix(t)
+    crestr = c[a:b, a:b]
+    return crestr
+
 def logprop_prior_speed(xps, yps, tau):
     """
     Our gaussian prior on a speed vector
@@ -188,6 +193,16 @@ def rescale_all_particles(r1, particles, zs, tau, eta):
         rescaled = rescale_one_particle(r1, particles[i, :], zs, tau, eta)
         particles[i, :] = rescaled
     return particles
+
+
+def x_candidate(xps, a, b, r2):
+    candidate = xps.copy()
+    t = xps.shape[0]
+    cres = c_restriction(t, a, b)
+    perturbation = np.random.multivariate_normal(candidate[a:b],
+                                                 r2*np.linalg.inv(cres))
+    candidate[a:b] = perturbation
+    return candidate
 
 
 def init_locs(locmean, locstd, N):
@@ -325,6 +340,11 @@ plt.plot(means[0], means[1], marker="o", label="Particle means")
 varw = [np.var(w) for w in allweights]
 
 plt.legend()
+
+x, y = particle_to_xyvecs(allparticles[20][0, :])
+xps = x[1:]
+xc = x_candidate(xps, 15, 20, 0.01)
+
 
 particle1 = allparticles[10][1, :]
 particle2 = allparticles[10][2, :]
