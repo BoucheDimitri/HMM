@@ -170,14 +170,23 @@ def lkl_ratio(particle1, particle2, zs, tau, eta):
     return np.exp(np.float(lpz1 + logprior1 - lpz2 - logprior2))
 
 
-def rescale_one_particle(r1, particle):
+def rescale_one_particle(r1, particle, zs, tau, eta):
     lamb = np.random.uniform(r1, 1/r1)
+    rescaled = lamb*particle.copy()
     u = np.random.uniform()
-    #lklratio =
+    lklratio = lkl_ratio(rescaled, particle, zs, tau, eta)
+    arprob = min(lklratio, 1)
+    if u < arprob:
+        return rescaled
+    else:
+        return particle
 
 
-def rescaling_move(r1, particles):
-    d = 34
+def rescale_all_particles(r1, particles, zs, tau, eta):
+    for i in range(0, particles.shape[0]):
+        rescaled = rescale_one_particle(r1, particles[i, :], zs, tau, eta)
+        particles[i, :] = rescaled
+    return particles
 
 
 def initialization(mprior, stdprior, N):
@@ -190,18 +199,21 @@ def initialization(mprior, stdprior, N):
 
 
 def resample_move_iteration(previouspartis,
-                            z,
+                            zs,
                             tau,
                             eta,
+                            r1=0.9,
                             N=None,
                             resampling="stratified"):
     augmented = augment_all_particles(previouspartis, tau)
-    lw = all_logweights(augmented, z, tau, eta)
+    t = augmented.shape[1]//2
+    lw = all_logweights(augmented, zs[t], tau, eta)
     normw = pfutils.norm_exp_logweights(lw)
     if resampling == "stratified":
         resampled = pfutils.stratified_resampling(augmented, normw, N)
     else:
         resampled = pfutils.multi_resampling(augmented, normw, N)
+    rescaled = rescale_all_particles(r1, resampled, zs, tau, eta)
     return resampled, normw
 
 
@@ -211,6 +223,7 @@ def resample_move(mprior,
                   N,
                   tau,
                   eta,
+                  r1,
                   deltaN,
                   resampling):
     particles = initialization(mprior, stdprior, N)
@@ -218,12 +231,13 @@ def resample_move(mprior,
     allparticles = []
     allweights = []
     allparticles.append(particles)
-    for t in range(1, T):
+    for t in range(1, T-2):
         newparticles, weights = resample_move_iteration(
             particles,
-            zs[t],
+            zs,
             tau,
             eta,
+            r1,
             N + t*deltaN,
             resampling)
         allparticles.append(newparticles)
@@ -277,7 +291,7 @@ stdprior = [0.04, 0.4, 0.001, 0.001]
 data = datagenerator.loc_data(x0, y0, xp0, yp0, T, tau, eta)
 zs = data["z"].as_matrix()
 
-allparticles, allweights = resample_move(mprior, stdprior, zs, N, tau, eta, 0, "stratified")
+allparticles, allweights = resample_move(mprior, stdprior, zs, N, tau, eta, 1, 0, "stratified")
 
 plt.figure()
 plt.plot(data["x"], data["y"], marker="o", label="True trajectory")
@@ -290,34 +304,4 @@ plt.legend()
 particle1 = allparticles[10][1, :]
 particle2 = allparticles[10][2, :]
 
-lklratio = logprop_llkl_ratio(particle1, 0.9*particle1, zs, tau, eta)
-
-
-
-
-
-
-toyparticle = np.array([data.loc[0, "x"]])
-toyparticle = np.append(toyparticle, np.array([data.loc[1:20, "xp"]]))
-toyparticle = np.append(toyparticle, np.array([data.loc[0, "y"]]))
-toyparticle = np.append(toyparticle, np.array([data.loc[1:20, "yp"]]))
-
-lw = one_logweight(toyparticle, data.loc[20, "z"], tau, eta)
-
-dd = augment_one_particle(toyparticle, tau)
-
-x, y = particle_to_xyvecs(toyparticle)
-
-toyparticles = np.transpose(np.repeat(
-    toyparticle.reshape(
-        (toyparticle.shape[0], 1)),
-    100,
-    axis=1))
-
-ddd = augment_all_particles(toyparticles, tau)
-
-zs = data["z"].as_matrix()
-
-p, w = initialization(mprior, stdprior, zs[0], 1000, 0.005)
-
-nw = pfutils.norm_exp_logweights(w)
+aa = rescale_one_particle(0.75, particle1, zs, tau, eta)
