@@ -7,16 +7,69 @@ import matplotlib.pyplot as plt
 import math
 
 
+def particle_to_xyvecs(particle):
+    """
+    Particle must be in order : (x0, xp0, ..., xpk, y0, yp0, ..., ypk)
+    :param particle: numupy.array, a particle
+    :return: tuple (particle containing x_0, xp_0, ..., xp_t,
+                    particle containing y_0, yp_0, ..., yp_t)
+    """
+    x = particle[ :particle.shape[0] // 2].copy()
+    y = particle[particle.shape[0] // 2: ].copy()
+    return x, y
+
+
 def logprop_gauss_ppf(x, m, sigma):
+    """
+    log of gauss density up to an additive constant
+    :param x:
+    :param m:
+    :param sigma:
+    :return:
+    """
     return -(x-m)*(x-m)/(2*sigma*sigma)
 
 
 def logprop_pz(z, y, x, eta):
+    """
+    compute log(p(z|x, y)) up to an additive constant
+    :param z: float, bearing
+    :param y: float, yloc
+    :param x: float, xloc
+    :param eta: float, measurement error's std
+    :return: float, log(p(z|x, y))
+    """
     m = math.atan(y/x)
     return logprop_gauss_ppf(z, m, eta)
 
 
+def logprop_pz_traj(particle, zs, eta):
+    """
+    compute log(p(z_0,...,z_t|a particle at time t))
+    up to an additive constant
+    :param particle: numpy.array, the particle at time t
+    :param zs: numpy.array, the bearings (at least up to time t)
+    :param eta: float, measurement error's std
+    :return: float, log(p(z_0,...,z_t|a particle at time t))
+    up to an additive constant
+    """
+    x, y = particle_to_xyvecs(particle)
+    xlocs = np.cumsum(x)
+    ylocs = np.cumsum(y)
+    t = xlocs.shape[0]
+    lp = 0
+    for i in range(0, t):
+        lp += logprop_pz(zs[i], ylocs[i], xlocs[i], eta)
+    return lp
+
+
 def c_matrix(t):
+    """
+    Generate the C matrix from the article (covariance matrix
+    of the gaussian prior on speed vectors)
+    :param t: dimension of c matrix
+    :return: numpy array, c matrix
+    """
     c = np.zeros((t, t))
     np.fill_diagonal(c, 2*np.ones((t, )))
     c[0, 0] = 1
@@ -31,10 +84,20 @@ def c_matrix(t):
     return c
 
 
-def logprop_prior_ppf(xps, yps, tau):
+def logprop_prior_speed(xps, yps, tau):
+    """
+    Our gaussian prior on a speed vector
+    reflecting our prior on the smoothness of
+    the trajectory.
+    In log and up to an additive constant
+    :param xps:
+    :param yps:
+    :param tau:
+    :return:
+    """
     k = xps.shape[0]
-    cxps = xps.reshape((k, 1))
-    cyps = yps.reshape((k, 1))
+    cxps = xps.copy().reshape((k, 1))
+    cyps = yps.copy().reshape((k, 1))
     cmat = c_matrix(k)
     xterm = -0.5 * tau * np.dot(np.dot(cxps.T,
                                        cmat),
@@ -45,38 +108,28 @@ def logprop_prior_ppf(xps, yps, tau):
     return xterm + yterm
 
 
-def particle_to_xyvecs(particle):
-    """
-    Particle must be in order : (x0, xp0, ..., xpk, y0, yp0, ..., ypk)
-    :param particle:
-    :return:
-    """
-    x = particle[ :particle.shape[0] // 2].copy()
-    y = particle[particle.shape[0] // 2: ].copy()
-    return x, y
-
-
 def one_logweight(particle, zk, tau, eta):
     k = particle.shape[0] - 4
     x, y = particle_to_xyvecs(particle)
     xps = x[1:]
     yps = y[1:]
-    pikminus1 = logprop_prior_ppf(xps[:k-1],
+    pikminus1 = logprop_prior_speed(xps[:k-1],
                                   yps[:k-1],
                                   tau)
-    pik = logprop_prior_ppf(xps[:k],
+    pik = logprop_prior_speed(xps[:k],
                             yps[:k],
                             tau)
     xk = np.sum(x)
     yk = np.sum(y)
     lpzk = logprop_pz(zk, yk, xk, eta)
     lpxpk = logprop_gauss_ppf(xps[-1],
-                             xps[-2],
-                             math.sqrt(1 / tau))
+                              xps[-2],
+                              math.sqrt(1 / tau))
     lpypk = logprop_gauss_ppf(yps[-1],
-                             yps[-2],
-                             math.sqrt(1 / tau))
-    return np.float(pik - pikminus1 + lpzk - lpxpk - lpypk)
+                              yps[-2],
+                              math.sqrt(1 / tau))
+    #return np.float(pik - pikminus1 + lpzk - lpxpk - lpypk)
+    return np.float(lpzk)
 
 
 def all_logweights(particles, zk, tau, eta):
@@ -104,29 +157,27 @@ def augment_all_particles(particles, tau):
         augmented[i, :] = augment_one_particle(particles[i, :], tau)
     return augmented
 
-#TODO: il y a visiblement un souci car toutes les particles sont pareils à chaque itération....
 
-def likelihood_ratio(particle1, particle2, tau):
+def lkl_ratio(particle1, particle2, zs, tau, eta):
     x1, y1 = particle_to_xyvecs(particle1)
     x2, y2 = particle_to_xyvecs(particle2)
     xp1, yp1 = x1[1:], y1[1:]
     xp2, yp2 = x2[1:], y2[1:]
-    lkl1 = logprop_prior_ppf(xp1, yp1, tau)
-    lkl2 = logprop_prior_ppf(xp2, yp2, tau)
-    logratio = lkl1 - lkl2
-    print (lkl1)
-    print(lkl2)
-    return np.exp(logratio)
+    lpz1 = logprop_pz_traj(particle1, zs, eta)
+    lpz2 = logprop_pz_traj(particle2, zs, eta)
+    logprior1 = logprop_prior_speed(xp1, yp1, tau)
+    logprior2 = logprop_prior_speed(xp2, yp2, tau)
+    return np.exp(np.float(lpz1 + logprior1 - lpz2 - logprior2))
 
 
 def rescale_one_particle(r1, particle):
     lamb = np.random.uniform(r1, 1/r1)
     u = np.random.uniform()
-    lklratio =
+    #lklratio =
 
 
 def rescaling_move(r1, particles):
-
+    d = 34
 
 
 def initialization(mprior, stdprior, N):
@@ -168,15 +219,17 @@ def resample_move(mprior,
     allweights = []
     allparticles.append(particles)
     for t in range(1, T):
-        particles, weights = resample_move_iteration(
+        newparticles, weights = resample_move_iteration(
             particles,
             zs[t],
             tau,
             eta,
             N + t*deltaN,
             resampling)
-        allparticles.append(particles)
+        allparticles.append(newparticles)
         allweights.append(weights)
+        del particles
+        particles = newparticles
         print(t)
     return allparticles, allweights
 
@@ -224,15 +277,20 @@ stdprior = [0.04, 0.4, 0.001, 0.001]
 data = datagenerator.loc_data(x0, y0, xp0, yp0, T, tau, eta)
 zs = data["z"].as_matrix()
 
-allparticles, allweights = resample_move(mprior, stdprior, zs, N, tau, eta, 0, "multinomial")
+allparticles, allweights = resample_move(mprior, stdprior, zs, N, tau, eta, 0, "stratified")
 
-
+plt.figure()
 plt.plot(data["x"], data["y"], marker="o", label="True trajectory")
-
 means = extract_loc_means(allparticles)
 plt.plot(means[0], means[1], marker="o", label="Particle means")
+varw = [np.var(w) for w in allweights]
 
 plt.legend()
+
+particle1 = allparticles[10][1, :]
+particle2 = allparticles[10][2, :]
+
+lklratio = logprop_llkl_ratio(particle1, 0.9*particle1, zs, tau, eta)
 
 
 
