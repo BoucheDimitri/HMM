@@ -1,6 +1,6 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import math
+
 
 import Probas as probas
 import Resampling as resampling

@@ -102,32 +102,3 @@ plt.scatter(means[0], means[1], label="Particle means")
 varw = [np.var(w) for w in allweightsrm]
 
 plt.legend()
-
-
-
-
-######DRAFTS############################
-plt.legend()
-
-x, y = particle_to_xyvecs(allparticles[20][0, :])
-xps = x[1:]
-xc = x_candidate(xps, 15, 20, 0.01)
-
-
-particle1 = allparticles[25][400, :]
-particle1copy = particle1.copy()
-particle2 = allparticles[10][2, :]
-
-perturbed = moves.perturbed_particle_bis(particle1, 20, 25, 1e-6, 1e-6)
-mhratio = probas.lkl_ratio(perturbed, particle1, zs, tau, eta)
-print(mhratio)
-
-x, y = algtools.particle_to_xyvecs(particle1)
-xps = x[1:]
-
-mumu = mu_inde_proposal(xps, 10, 20)
-
-perturbed = moves.perturbed_particle(particle1, zs, 20, 25, 1e-6, 0.005)
-mhratio = probas.lkl_ratio(perturbed, particle1, zs, tau, eta)
-print(mhratio)
-

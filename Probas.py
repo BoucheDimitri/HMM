@@ -42,10 +42,10 @@ def c_matrix(t):
 def logprop_gauss_ppf(x, m, sigma):
     """
     log of gauss density up to an additive constant
-    :param x:
-    :param m:
-    :param sigma:
-    :return:
+    :param x: float, x
+    :param m: float, mean
+    :param sigma: float, std
+    :return: float, log proportionnal to log of gaussian density
     """
     return -(x-m)*(x-m)/(2*sigma*sigma)
 
@@ -89,10 +89,10 @@ def logprop_prior_speed(xps, yps, tau):
     reflecting our prior on the smoothness of
     the trajectory.
     In log and up to an additive constant
-    :param xps:
-    :param yps:
-    :param tau:
-    :return:
+    :param xps: vector of speeds in x
+    :param yps: vector of speeds in y
+    :param tau: inverse of variance of speeds
+    :return: prior on a speed vector, in log up to an additive constant
     """
     k = xps.shape[0]
     cxps = xps.copy().reshape((k, 1))
@@ -108,6 +108,17 @@ def logprop_prior_speed(xps, yps, tau):
 
 
 def one_logweight(particle, zk, tau, eta):
+    """
+    Compute logweights up to an additive constant for a given particle
+    Some lines are now useless, they were used to compute
+    the complex theoretical weights from the article
+    which turned out to work not so greatly
+    :param particle: numpy array, particle
+    :param zk: float, bearing observation
+    :param tau: inverse of variance of speeds
+    :param eta: std of noise on bearings measurement
+    :return: log of weight for the particle up to an additive constant
+    """
     k = particle.shape[0] - 4
     x, y = algtools.particle_to_xyvecs(particle)
     xps = x[1:]
@@ -132,6 +143,16 @@ def one_logweight(particle, zk, tau, eta):
 
 
 def all_logweights(particles, zk, tau, eta):
+    """
+    Compute weights as done on one particle in
+    one_logweight for all particles
+    :param particles: numpy array, array of particles
+    :param zk: float, bearing observation
+    :param tau: inverse of variance of speeds
+    :param eta: std of noise on bearings measurement
+    :return: numpy array,
+    the array of log of weight for the particle up to an additive constant
+    """
     npartis = particles.shape[0]
     lw = np.zeros((npartis, ))
     for i in range(0, npartis):
@@ -140,6 +161,17 @@ def all_logweights(particles, zk, tau, eta):
 
 
 def lkl_ratio(particle1, particle2, zs, tau, eta):
+    """
+    compute the likelyhood ratio given the data zs
+    for two particles. Will be used for the Metropolis
+    Hastings moves
+    :param particle1: numpy array, a particle
+    :param particle2:  numpy array, a particle
+    :param zs: numpy array, bearings data
+    :param tau: inverse of variance of speeds
+    :param eta: std of noise on bearings measurement
+    :return:
+    """
     x1, y1 = algtools.particle_to_xyvecs(particle1)
     x2, y2 = algtools.particle_to_xyvecs(particle2)
     xp1, yp1 = x1[1:], y1[1:]
