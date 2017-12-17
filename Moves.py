@@ -118,7 +118,7 @@ def perturb_one_particle_bis(particle, zs, a, b, r2, r3, tau, eta):
     mhratio = probas.lkl_ratio(perturbed, particle, zs, tau, eta)
     arprob = min(1, mhratio)
     u = np.random.uniform()
-    print(arprob)
+    #print(arprob)
     if u < arprob:
         return perturbed
     else:

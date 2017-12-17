@@ -93,8 +93,8 @@ def bootstrap_iteration(previouspartis,
                         previousw,
                         tau,
                         eta,
-                        resampling="stratified"):
-    if resampling == "stratified":
+                        res="stratified"):
+    if res == "stratified":
         resampled = resampling.stratified_resampling(previouspartis, previousw)
     else :
         resampled = resampling.multi_resampling(previouspartis, previousw)
@@ -105,7 +105,7 @@ def bootstrap_iteration(previouspartis,
 
 
 def bootstrap_filter(mprior, stdprior, zs, N, tau, eta,
-                     resampling="stratified"):
+                     res="stratified"):
     particleslist = []
     weightslist = []
     particles, weights = bootstrap_initialization(mprior,
@@ -122,47 +122,8 @@ def bootstrap_filter(mprior, stdprior, zs, N, tau, eta,
                                                  weights,
                                                  tau,
                                                  eta,
-                                                 resampling)
+                                                 res)
         particleslist.append(particles)
         weightslist.append(weights)
         print(str(i) + "-th iteration")
     return particleslist, weightslist
-
-#eta = std of noise in measurement
-eta = 0.005
-#tau is such that math.sqrt(1/tau) is the std for speeds
-tau = 1000000
-#N is the number of particles
-N = 1000
-#T is the number of periods
-T = 50
-#Initial conditions
-x0 = 3
-y0 = 5
-xp0 = 0.002
-yp0 = -0.013
-#noise on initial position
-mux = 0.001
-muy = -0.1
-mprior = [x0 + mux, y0 + muy, 0.002, -0.013]
-stdprior = [0.04, 0.4, 0.003, 0.003]
-
-
-data = datagenerator.loc_data(x0, y0, xp0, yp0, T, tau, eta)
-#Delete first observation
-zs = data["z"].as_matrix()[1:]
-#initp, initw = bootstrap_initialization(mprior, stdprior, zs[0], tau, eta)
-#p, w = bootstrap_iteration(initp, zs[1], initw, 0.005, 1000)
-allparticles, allweights = bootstrap_filter(mprior, stdprior, zs, N, tau, eta, "stratified")
-
-parti = allparticles[20][0, :]
-
-perturb = moves.perturb_on
-
-means = np.array([np.mean(a, axis=0) for a in allparticles])
-varw = [np.var(w) for w in allweights]
-
-plt.figure()
-plt.plot(means[:, 0], means[:, 1], label="particle_means", marker="o")
-plt.plot(data["x"][1:], data["y"][1:], label="real_trajectory",marker="o")
-plt.legend()
