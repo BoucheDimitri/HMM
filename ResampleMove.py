@@ -199,4 +199,3 @@ perturbed = moves.perturbed_particle(particle1, zs, 20, 25, 1e-6, 0.005)
 mhratio = probas.lkl_ratio(perturbed, particle1, zs, tau, eta)
 print(mhratio)
 
-aa = rescale_one_particle(0.75, particle1, zs, tau, eta)
