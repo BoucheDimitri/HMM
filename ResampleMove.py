@@ -50,6 +50,7 @@ def resample_move_iteration(previouspartis,
                             eta,
                             r1,
                             r2,
+                            r3,
                             a,
                             b,
                             restype="stratified"):
@@ -62,7 +63,8 @@ def resample_move_iteration(previouspartis,
     else:
         resampled = resampling.multi_resampling(augmented, normw, N)
     rescaled = moves.rescale_all_particles(r1, resampled, zs, tau, eta)
-    perturbed = moves.pertub_all_particles(rescaled, zs, a, b, r2, tau, eta)
+    #perturbed = moves.pertub_all_particles(rescaled, zs, a, b, r2, tau, eta)
+    perturbed = moves.pertub_all_particles_bis(rescaled, zs, a, b, r2, r3, tau, eta)
     return perturbed, normw
     #return resampled, normw
 
@@ -77,6 +79,7 @@ def resample_move(locmean,
                   eta,
                   r1,
                   r2,
+                  r3,
                   restype):
     allparticles = []
     allweights = []
@@ -96,7 +99,8 @@ def resample_move(locmean,
             eta,
             r1,
             r2,
-            max(t-5, 0),
+            r3,
+            max(t-4, 0),
             t,
             restype)
         allparticles.append(newparticles)
@@ -136,7 +140,7 @@ tau = 1e6
 #N is the number of particles
 N = 1000
 #T is the number of periods
-T = 50
+T = 30
 #Initial conditions
 x0 = 3
 y0 = 5
@@ -160,14 +164,15 @@ allparticles, allweights = resample_move(locpriormean,
                                          N,
                                          tau,
                                          eta,
-                                         0.9999,
-                                         1e-6,
+                                         0.999,
+                                         1e6,
+                                         1e6,
                                          "stratified")
 
 plt.figure()
-plt.plot(data["x"], data["y"], marker="o", label="True trajectory")
+plt.plot(data["x"], data["y"], label="True trajectory")
 means = extract_loc_means(allparticles)
-plt.plot(means[0], means[1], marker="o", label="Particle means")
+plt.scatter(means[0], means[1], label="Particle means")
 varw = [np.var(w) for w in allweights]
 
 plt.legend()
@@ -180,6 +185,15 @@ xc = x_candidate(xps, 15, 20, 0.01)
 particle1 = allparticles[25][400, :]
 particle1copy = particle1.copy()
 particle2 = allparticles[10][2, :]
+
+perturbed = moves.perturbed_particle_bis(particle1, 20, 25, 1e-6, 1e-6)
+mhratio = probas.lkl_ratio(perturbed, particle1, zs, tau, eta)
+print(mhratio)
+
+x, y = algtools.particle_to_xyvecs(particle1)
+xps = x[1:]
+
+mumu = mu_inde_proposal(xps, 10, 20)
 
 perturbed = moves.perturbed_particle(particle1, zs, 20, 25, 1e-6, 0.005)
 mhratio = probas.lkl_ratio(perturbed, particle1, zs, tau, eta)
