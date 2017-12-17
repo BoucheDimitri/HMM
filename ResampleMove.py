@@ -165,8 +165,8 @@ allparticles, allweights = resample_move(locpriormean,
                                          tau,
                                          eta,
                                          0.999,
-                                         1e6,
-                                         1e6,
+                                         1e-6,
+                                         1e-6,
                                          "stratified")
 
 plt.figure()
