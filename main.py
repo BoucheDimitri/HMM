@@ -20,7 +20,7 @@ tau = 1000000
 #N is the number of particles
 N = 1000
 #T is the number of periods
-T = 100
+T = 50
 #Initial conditions
 x0 = 3
 y0 = 5
@@ -89,9 +89,10 @@ allparticlesrm, allweightsrm = resamplemove.resample_move(locpriormean,
                                          N,
                                          tau,
                                          eta,
-                                         0.999,
+                                         0.995,
                                          1e-6,
                                          1e-6,
+                                        10,
                                          "stratified")
 
 plt.figure()

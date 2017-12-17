@@ -60,13 +60,13 @@ def x_candidate(xps, a, b, r2):
     return candidate
 
 
-def y_candidate(xlocs, ypinit, a, b, zs, eta):
+def y_candidate(xlocs, ypinit, a, b, zs, xi):
     candidate = ypinit.copy()
     tanmat = algtools.tan_matrix(a, b, zs)
     #print(tanmat)
     mu = np.dot(tanmat, xlocs[a:b+1])
     #print(mu)
-    covmat = algtools.eta_matrix(b-a, eta)
+    covmat = algtools.eta_matrix(b-a, xi)
     perturbation = np.random.multivariate_normal(mu, covmat)
     candidate[a:b] = perturbation
     return candidate
@@ -83,11 +83,10 @@ def perturbed_particle(particle, zs, a, b, r2, eta):
     ypcandidate = y_candidate(xlocs, yps, a, b, zs, eta)
     ycandidate = y.copy()
     ycandidate[1:] = ypcandidate
-    #return np.concatenate((xcandidate, ycandidate))
-    return np.concatenate((xcandidate, y.copy()))
+    return np.concatenate((xcandidate, ycandidate))
 
 
-def perturbed_particle_bis(particle, a, b, r2, r3):
+def perturbed_particle_noninf(particle, a, b, r2, r3):
     x, y = algtools.particle_to_xyvecs(particle)
     xps = x[1:]
     yps = y[1:]
@@ -98,7 +97,6 @@ def perturbed_particle_bis(particle, a, b, r2, r3):
     ycandidate = y.copy()
     ycandidate[1:] = ypcandidate
     return np.concatenate((xcandidate, ycandidate))
-    #return np.concatenate((xcandidate, y.copy()))
 
 
 def perturb_one_particle(particle, zs, a, b, r2, tau, eta):
@@ -113,12 +111,12 @@ def perturb_one_particle(particle, zs, a, b, r2, tau, eta):
         return particle
 
 
-def perturb_one_particle_bis(particle, zs, a, b, r2, r3, tau, eta):
-    perturbed = perturbed_particle_bis(particle, a, b, r2, r3)
+def perturb_one_particle_noninf(particle, zs, a, b, r2, r3, tau, eta):
+    perturbed = perturbed_particle_noninf(particle, a, b, r2, r3)
     mhratio = probas.lkl_ratio(perturbed, particle, zs, tau, eta)
     arprob = min(1, mhratio)
     u = np.random.uniform()
-    #print(arprob)
+    print(arprob)
     if u < arprob:
         return perturbed
     else:
@@ -132,9 +130,9 @@ def pertub_all_particles(particles, zs, a, b, r2, tau, eta):
     return particles
 
 
-def pertub_all_particles_bis(particles, zs, a, b, r2, r3, tau, eta):
+def perturb_all_particles_noninf(particles, zs, a, b, r2, r3, tau, eta):
     for i in range(0, particles.shape[0]):
-        perturbed = perturb_one_particle_bis(particles[i, :], zs, a, b, r2, r3, tau, eta)
+        perturbed = perturb_one_particle_noninf(particles[i, :], zs, a, b, r2, r3, tau, eta)
         particles[i, :] = perturbed
     return particles
 
