@@ -19,7 +19,7 @@ from save_data import *
 matplotlib.rcParams.update({'font.size': 10})
 
 #################################
-### PARAMETER INITIALISATIONS ###
+### PARAMETERS INITIALISATION ###
 #################################
 
 eta = 0.005 # std of noise in measurement
@@ -79,12 +79,6 @@ plt.xlabel("x coordinate")
 plt.ylabel("y coordinate")
 plt.title("Boostrap filter")
 
-print("Pour X BS:", NMSE(data["x"], X_bs))
-print("Pour Y BS:", NMSE(data["y"], Y_bs))
-
-plot_normalized(data["x"], X_bs)
-plot_normalized(data["y"], Y_bs)
-
 
 ####################################
 ### RESAMPLE MOVE WITH FIXED TAU ###
@@ -107,15 +101,7 @@ plt.figure()
 plt.plot(data["x"], data["y"], label="True trajectory")
 plt.scatter(X_rmft, Y_rmft, label="Particle means")
 plt.title("Resample move with fixed tau")
-varw = [np.var(w) for w in allweightsrm]
 plt.legend()
-
-print("Pour X RMFT:", NMSE(data["x"], X_rmft))
-print("Pour Y RMFT:", NMSE(data["y"], Y_rmft))
-
-plot_normalized(data["x"], X_rmft)
-plot_normalized(data["y"], Y_rmft)
-
 
 
 ############################################
@@ -158,7 +144,7 @@ plt.figure()
 plt.plot(all_tau_estimations, label="Estimations of tau at each step")
 plt.legend()
 
-# et les variances e tau
+# et les variances de tau
 alltau_plot = np.array(alltaurtm[1:])
 allweights = np.array(allweightsrtm)
 sum_weights = allweights.sum(axis=1)
