@@ -123,8 +123,7 @@ plot_normalized(data["y"], Y_rmft)
 
 # nous initialisons nos paramètres prior
 d0 = 2
-c0 = (d0-1)*100/tau #this initilization gives a first biaised estimation of tau (/100)
-c0 = (2-1)/tau
+c0 = (d0-1)/tau #inv.gamma(d0,c0) a une moyenne de 2*tau
 locpriormean = [x0 + mux, y0 + muy]
 locpriorstd = [0.0000001, 0.0000001]
 speedpriormean = [xp0, yp0]
