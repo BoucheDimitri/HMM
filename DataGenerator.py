@@ -20,9 +20,7 @@ def speed_data(xp0,
     :param tau: float, inverse of variance of speed
     :return: pandas.core.frame.DataFrame, the data frame of speed data
     """
-    speeds = pd.DataFrame(columns=["xp", "yp"],
-                          index=range(0, T),
-                          dtype=float)
+    speeds = pd.DataFrame(columns=["xp", "yp"], index=range(0, T), dtype=float)
     speeds.set_value(0, "xp", xp0)
     speeds.set_value(0, "yp", yp0)
     for t in range(1, T):
@@ -79,9 +77,13 @@ def loc_data(x0,
              T,
              tau=1000,
              eta=0.005):
+    # génération de l'ensemble des vitesses à partir des vitesses initiales            
     speed = speed_data(xp0, yp0, T, tau)
+    # génération des position à partir des vitesse et des positions initiales
     locs = loc_from_speed_data(speed, x0, y0)
+    # ajout des bearings
     locs = add_bearings(locs, eta)
+    # un DataFrame de cinq colonnes (x, y, xp, yp, z) est retournée
     return locs
 
 
