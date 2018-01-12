@@ -30,8 +30,7 @@ stdprior = [0.0000001, 0.0000001, 0.0000001, 0.0000001]
 
 
 d0 = 2
-c0 = (d0-1)*100/tau #this initilization gives a first biaised estimation of tau (/100)
-c0 = (2-1)/tau
+c0 = (d0-1)/tau
 locpriormean = [x0 + mux, y0 + muy]
 locpriorstd = [0.0000001, 0.0000001]
 speedpriormean = [xp0, yp0]
