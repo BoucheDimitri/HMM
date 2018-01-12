@@ -1,4 +1,7 @@
-# nous faisons les importations necessaires
+################
+### PACKAGES ###
+################
+
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
