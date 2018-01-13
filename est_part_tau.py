@@ -69,13 +69,24 @@ def resample_move_with_estimation_of_tau_n_times(n):
         
         ################
 
-        alltau_plot = np.array(alltaurtm[1:])
+        alltaurtm = np.array(alltaurtm)
+        alltaurtm1 = np.array(alltaurtm[1:])
         allweights = np.array(allweightsrtm)
-        alltau_weighted = alltau_plot*allweights
+        alltaurtm1_weighted =alltaurtm1*allweights
+        all_tau_estimations1 = np.sum(alltaurtm1_weighted, axis=1)
+        all_tau_estimations = np.zeros(T-1)
+        all_tau_estimations[0] = np.mean(alltaurtm[0])
+        all_tau_estimations[1:] = all_tau_estimations1
+
+        all_est_tau_post.append(all_tau_estimations)
         
-        est_tau_post = alltau_weighted.mean(axis=1)
-        all_est_tau_post.append(est_tau_post)
-        var_tau_post = alltau_weighted.var(axis=1)
+        esperance = np.zeros((T-1,N))
+        for i in range(0,N):
+            esperance[:,i] = all_tau_estimations
+        mean_squared = (alltaurtm-esperance)**2
+        var_tau_post = np.zeros((T-1))
+        var_tau_post[0] = np.mean(mean_squared[0,:])
+        var_tau_post[1:] = np.sum(mean_squared[1:,:]*allweights,axis=1)
         all_var_tau_post.append(var_tau_post)
         
         print(iteration_algo+1, "ème itération")
@@ -92,12 +103,5 @@ mean_var_post = all_var_tau_post.mean(axis=0)
 
 plt.figure()
 plt.plot(var_all_est_tau_post)
-plt.title("Variance de la loi a posteriori à chaque étape")
-plt.legend()
-
-relative_error = var_all_est_tau_post/mean_var_post 
-
-plt.figure()
-plt.plot(relative_error)
-plt.title("Variance de l'estimateur paticulaire à chaque étape")
+plt.title("Variance de l'estimateur particulaire")
 plt.legend()
