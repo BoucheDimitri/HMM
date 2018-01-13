@@ -95,8 +95,7 @@ for i in range(0, Q):
     
     # nous initialisons nos paramètres prior
     d0 = 2
-    c0 = (d0-1)*100/tau #this initilization gives a first biaised estimation of tau (/100)
-    c0 = (2-1)/tau
+    c0 = (d0-1)/tau
     locpriormean = [x0 + mux, y0 + muy]
     locpriorstd = [0.0000001, 0.0000001]
     speedpriormean = [xp0, yp0]
@@ -115,15 +114,22 @@ for i in range(0, Q):
     
     # nous affichons les estimations de tau
     alltaurtm = np.array(alltaurtm)
-    all_tau_estimations = alltaurtm.mean(axis=1)
-    
-    # et les variances e tau
-    alltau_plot = np.array(alltaurtm[1:])
+    alltaurtm1 = np.array(alltaurtm[1:])
     allweights = np.array(allweightsrtm)
-    sum_weights = allweights.sum(axis=1)
-    alltau_weighted = alltau_plot*allweights
-    var_tau_post = alltau_weighted.var(axis=1)
+    alltaurtm1_weighted =alltaurtm1*allweights
+    all_tau_estimations1 = np.sum(alltaurtm1_weighted, axis=1)
+    all_tau_estimations = np.zeros(T-1)
+    all_tau_estimations[0] = np.mean(alltaurtm[0])
+    all_tau_estimations[1:] = all_tau_estimations1
     
+    # et les variances de tau
+    esperance = np.zeros((T-1,N))
+    for i in range(0,N):
+        esperance[:,i] = all_tau_estimations
+    mean_squared = (alltaurtm-esperance)**2
+    var_tau_post = np.zeros((T-1))
+    var_tau_post[0] = np.mean(mean_squared[0,:])
+    var_tau_post[1:] = np.sum(mean_squared[1:,:]*allweights,axis=1)
     
     ###################
     ### SAVING DATA ###
