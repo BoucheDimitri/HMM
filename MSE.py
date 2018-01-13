@@ -3,48 +3,27 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
-
     
 def two_point_distance(X1, Y1, X2, Y2):
     return np.sqrt((X1 - X2)**2 + (Y1 - Y2)**2)
     
 def distance_filter(data, filter_est):
+    N = len(data["X"])
     
-    Q = len(data)
-    N = len(data[0]["X"])
-    moyenne_distance_Qalgo = np.zeros(N)
+    somme = 0    
     
     for i in range(0, N):
-        somme = 0 
-        for j in range(0, Q):
-            somme = somme + two_point_distance(data[j]["X"][i], data[j]["Y"][i], data[j]["X_" + filter_est][i], data[j]["Y_" + filter_est][i])
+        somme = somme + two_point_distance(data["X"][i], data["Y"][i], data["X_" + filter_est][i], data["Y_" + filter_est][i])
         
-        moyenne = somme/Q
-        moyenne_distance_Qalgo[i] = moyenne
-        
-    return moyenne_distance_Qalgo
-
+    return somme
+    
+    
 def distance_all_filters(data):
     distance_bs = distance_filter(data, "bs")
     distance_rmft = distance_filter(data, "rmft")
     distance_rm = distance_filter(data, "rm")
-
-    return distance_bs, distance_rmft, distance_rm
-
-def variance_estimateur_tau(data):
-    Q = len(data)
-    N = len(data[0]["X"])
-    variance_tau_Qalgo = np.zeros(N-1)
     
-    for i in range(1, N):
-        results = []
-        
-        for j in range(0, Q):
-            results.append(data[j]["tau_rm"][i])
-            
-        variance_tau_Qalgo[i-1] = np.var(np.asarray(results))
-        print(results)
-    return variance_tau_Qalgo
+    return distance_bs, distance_rmft, distance_rm
     
 def mean_distance_all_filters(data):
     N = len(data["X"])
@@ -126,3 +105,65 @@ def sde_periode_graphe():
         print(i)
         
     return liste_distance_bs, liste_distance_rmft, liste_distance_rm
+    
+def create_complete_dataframe(true_data, data_bs, data_rmft, data_rm, tau_rm, var_tau_rm):
+    columns = ["X", "Y", "Z", "X_bs", "Y_bs", "X_rmft", "Y_rmft", "X_rm", "Y_rm", "tau_rm", "var_tau_rm"]
+    data = pd.DataFrame(columns = columns)
+    
+    data["X"] = true_data["x"]
+    data["Y"] = true_data["y"]
+    data["Z"] = true_data["z"]
+    
+    data["X_bs"] = data_bs[0]
+    data["Y_bs"] = data_bs[1]
+    
+    data["X_rmft"] = data_rmft[0]
+    data["Y_rmft"] = data_rmft[1]
+    
+    data["X_rm"] = data_rm[0]
+    data["Y_rm"] = data_rm[1]
+    data["tau_rm"] = pd.Series(tau_rm)
+    data["var_tau_rm"] = pd.Series(var_tau_rm)  
+    
+    return data
+    
+    
+def distances_moyenne_point_data_complet(data_complet, point):
+    distance_rm = 0
+    distance_bs = 0
+    distance_rmft = 0
+    
+    for i in range(0, len(data_complet)):
+        data = data_complet[i]
+        distance_bs = distance_bs + two_point_distance(data["X"][point], data["Y"][point], data["X_bs"][point], data["Y_bs"][point])
+        distance_rmft = distance_rmft + two_point_distance(data["X"][point], data["Y"][point], data["X_rmft"][point], data["Y_rmft"][point])
+        distance_rm = distance_rm + two_point_distance(data["X"][point], data["Y"][point], data["X_rm"][point], data["Y_rm"][point])
+        print(i)
+    
+    N = i - 1
+    return distance_bs/N, distance_rmft/N, distance_rm/N   
+    
+def sde_periode_data_complet(data_complet):
+    K = len(data_complet[0]["X"])
+    
+    liste_distance_bs = []
+    liste_distance_rmft = []
+    liste_distance_rm = []
+    
+    
+    for i in range(0, K):
+        distance_bs, distance_rmft, distance_rm = distances_moyenne_point_data_complet(data_complet, i)
+        
+        liste_distance_bs.append(distance_bs)
+        liste_distance_rmft.append(distance_rmft)
+        liste_distance_rm.append(distance_rm)
+    
+    plt.plot(liste_distance_bs, label = "BS")
+    plt.plot(liste_distance_rmft, label = "RMFT")
+    plt.plot(liste_distance_rm, label = "RM")
+    plt.title("Moyenne des distances euclidiennes à la vraie trajectoire")
+    plt.legend(loc = 2)
+    plt.show()
+        
+
+    
