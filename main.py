@@ -1,7 +1,4 @@
-################
-### PACKAGES ###
-################
-
+# nous faisons les importations necessaires
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
@@ -12,7 +9,6 @@ import ResampleMove as resamplemove
 import ResampleTauMove as resampletaumove
 import DataGenerator as datagenerator
 import TauMove as taumove
-import boucle_main
 from MSE import *
 from save_data import *
 
@@ -20,7 +16,7 @@ from save_data import *
 matplotlib.rcParams.update({'font.size': 10})
 
 #################################
-### PARAMETERS INITIALISATION ###
+### PARAMETER INITIALISATIONS ###
 #################################
 
 eta = 0.005 # std of noise in measurement
@@ -102,7 +98,9 @@ plt.figure()
 plt.plot(data["x"], data["y"], label="True trajectory")
 plt.scatter(X_rmft, Y_rmft, label="Particle means")
 plt.title("Resample move with fixed tau")
+varw = [np.var(w) for w in allweightsrm]
 plt.legend()
+
 
 
 ############################################
@@ -113,7 +111,8 @@ plt.legend()
 
 # nous initialisons nos paramètres prior
 d0 = 2
-c0 = (d0-1)/tau #inv.gamma(d0,c0) a une moyenne de 2*tau
+c0 = (d0-1)*100/tau #this initilization gives a first biaised estimation of tau (/100)
+c0 = (2-1)/tau
 locpriormean = [x0 + mux, y0 + muy]
 locpriorstd = [0.0000001, 0.0000001]
 speedpriormean = [xp0, yp0]
@@ -135,6 +134,7 @@ plt.figure()
 plt.plot(data["x"], data["y"], label="True trajectory")
 plt.scatter(X_rm, Y_rm, label="Particle means")
 plt.title("Resample move")
+varw = [np.var(w) for w in allweightsrtm]
 plt.legend()
 
 # nous affichons les estimations de tau
@@ -144,7 +144,7 @@ plt.figure()
 plt.plot(all_tau_estimations, label="Estimations of tau at each step")
 plt.legend()
 
-# et les variances de tau
+# et les variances e tau
 alltau_plot = np.array(alltaurtm[1:])
 allweights = np.array(allweightsrtm)
 sum_weights = allweights.sum(axis=1)
@@ -154,50 +154,12 @@ plt.figure()
 plt.plot(var_tau_post, label="Variance of simulations of tau")
 plt.legend()
 
-
-###########################################################################
-### BOOTSTRAP, RESAMPLE-MOVE WITH FIXED TAU, RESAMPLE-MOVE WITH EST. TAU###
-###                                Q TIMES                              ###
-###########################################################################
+plt.plot()
 
 
-#PARAMETERS INITIALIZATION
+###################
+### SAVING DATA ###
+###################
 
-Q = 10 #nb of execution of each filter
-
-eta = 0.005 # std of noise in measurement
-tau = 1/0.000001 #tau is such that math.sqrt(1/tau) is the std for speeds
-N = 100 #N is the number of particles
-T = 10 #T is the number of periods
-
-x0 = 0.01
-y0 = 20
-xp0 = 0.002
-yp0 = -0.06
-
-mux = 0
-muy = 0
-mprior = [x0 + mux, y0 + muy, xp0, yp0]
-stdprior = [0.0000001, 0.0000001, 0.0000001, 0.0000001]
-
-results = boucle_main.all_algorithms_Qtimes(Q, eta, tau, N, T, x0, y0, xp0, yp0, mux, muy, mprior, stdprior)
-
-#calcul des distances
-all_mean_distances = distance_all_filters(results)
-
-#plot des distances moyennes
-plt.figure()
-plt.plot(all_mean_distances[0], label="BS")
-plt.plot(all_mean_distances[1], label="RMFT")
-plt.plot(all_mean_distances[2], label="RM")
-plt.legend()
-plt.title("Moyennes des distances euclidiennes à la vraie valeur")
-
-#calcul des variances de l'estimateur de tau
-all_var_tau = variance_estimateur_tau(results)
-
-#plot des variances de l'estimateur particulaire de tau
-plt.figure()
-plt.plot(all_var_tau)
-plt.legend()
-plt.title("Variance de l'estimateur de tau")
+# nous sauvons nos données
+save_data(data, [X_bs, Y_bs], [X_rmft, Y_rmft], [X_rm, Y_rm], all_tau_estimations, var_tau_post)
