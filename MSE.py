@@ -3,27 +3,48 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
+
     
 def two_point_distance(X1, Y1, X2, Y2):
     return np.sqrt((X1 - X2)**2 + (Y1 - Y2)**2)
     
 def distance_filter(data, filter_est):
-    N = len(data["X"])
     
-    somme = 0    
+    Q = len(data)
+    N = len(data[0]["X"])
+    moyenne_distance_Qalgo = np.zeros(N)
     
     for i in range(0, N):
-        somme = somme + two_point_distance(data["X"][i], data["Y"][i], data["X_" + filter_est][i], data["Y_" + filter_est][i])
+        somme = 0 
+        for j in range(0, Q):
+            somme = somme + two_point_distance(data[j]["X"][i], data[j]["Y"][i], data[j]["X_" + filter_est][i], data[j]["Y_" + filter_est][i])
         
-    return somme
-    
-    
+        moyenne = somme/Q
+        moyenne_distance_Qalgo[i] = moyenne
+        
+    return moyenne_distance_Qalgo
+
 def distance_all_filters(data):
     distance_bs = distance_filter(data, "bs")
     distance_rmft = distance_filter(data, "rmft")
     distance_rm = distance_filter(data, "rm")
-    
+
     return distance_bs, distance_rmft, distance_rm
+
+def variance_estimateur_tau(data):
+    Q = len(data)
+    N = len(data[0]["X"])
+    variance_tau_Qalgo = np.zeros(N-1)
+    
+    for i in range(1, N):
+        results = []
+        
+        for j in range(0, Q):
+            results.append(data[j]["tau_rm"][i])
+            
+        variance_tau_Qalgo[i-1] = np.var(np.asarray(results))
+        print(results)
+    return variance_tau_Qalgo
     
 def mean_distance_all_filters(data):
     N = len(data["X"])
