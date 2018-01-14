@@ -14,3 +14,4 @@ Pour lancer les algorithmes, il faut se rendre dans les deux principaux scripts 
   - "boucle_main" pour lancer chaque filtre plusieurs fois.
   En lançant boucle_main, vous aurez Q = 100 itérations de l'algorithme qui vont s'effectuer.
   Puis un graphique des distances comme dans le graphe des résultats va s'afficher.
+  Vont également s'afficher le graphe des estimations de la variance de l'estimateur particulaire à chaque étape ainsi que la variance de la loi à posteriori de tau.
