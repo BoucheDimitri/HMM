@@ -14,3 +14,4 @@ Pour lancer les algorithmes, il faut se rendre dans les deux principaux scripts 
   - "boucle_main" pour lancer chaque filtre plusieurs fois.
     En lançant boucle_main, vous aurez Q = 100 itérations de chaque algorithme qui vont s'effectuer.
     Puis un graphique des distances comme dans le graphe des résultats va s'afficher ainsi que le graphique de la variance de       l'estimatieur   particulaire.
+Prévoir un temps de 1h30 environ pour attendre la résultat de cette simulation, environ 1 minute par simulation complète.
