@@ -19,6 +19,9 @@ Q = 100
 
 data_complet = []
 
+all_est_tau_post = []
+all_var_tau_post = []
+
 for i in range(0, Q):
 
     #################################
@@ -95,7 +98,8 @@ for i in range(0, Q):
     
     # nous initialisons nos paramètres prior
     d0 = 2
-    c0 = (d0-1)/tau
+    c0 = (d0-1)*100/tau #this initilization gives a first biaised estimation of tau (/100)
+    c0 = (2-1)/tau
     locpriormean = [x0 + mux, y0 + muy]
     locpriorstd = [0.0000001, 0.0000001]
     speedpriormean = [xp0, yp0]
@@ -114,29 +118,45 @@ for i in range(0, Q):
     
     # nous affichons les estimations de tau
     alltaurtm = np.array(alltaurtm)
-    alltaurtm1 = np.array(alltaurtm[1:])
-    allweights = np.array(allweightsrtm)
-    alltaurtm1_weighted =alltaurtm1*allweights
-    all_tau_estimations1 = np.sum(alltaurtm1_weighted, axis=1)
-    all_tau_estimations = np.zeros(T-1)
-    all_tau_estimations[0] = np.mean(alltaurtm[0])
-    all_tau_estimations[1:] = all_tau_estimations1
+    all_tau_estimations = alltaurtm.mean(axis=1)
     
     # et les variances de tau
-    esperance = np.zeros((T-1,N))
-    for i in range(0,N):
-        esperance[:,i] = all_tau_estimations
-    mean_squared = (alltaurtm-esperance)**2
-    var_tau_post = np.zeros((T-1))
-    var_tau_post[0] = np.mean(mean_squared[0,:])
-    var_tau_post[1:] = np.sum(mean_squared[1:,:]*allweights,axis=1)
+    alltau_plot = np.array(alltaurtm[1:])
+    allweights = np.array(allweightsrtm)
+    sum_weights = allweights.sum(axis=1)
+    alltau_weighted = alltau_plot*allweights
+    var_tau_post = alltau_weighted.var(axis=1)
+    
+    est_tau_post = alltau_weighted.mean(axis=1)
+    all_est_tau_post.append(est_tau_post)
+    all_var_tau_post.append(var_tau_post)    
+    
     
     ###################
     ### SAVING DATA ###
     ###################
     
+    # decommenter si nous voulons sauvegarder nos données
     #save_data(data, [X_bs, Y_bs], [X_rmft, Y_rmft], [X_rm, Y_rm], all_tau_estimations, var_tau_post)
     
     data_complet.append(create_complete_dataframe(data, [X_bs, Y_bs], [X_rmft, Y_rmft], [X_rm, Y_rm], all_tau_estimations, var_tau_post))
     
 sde_periode_data_complet(data_complet)
+
+all_est_tau_post = np.array(all_est_tau_post)
+var_all_est_tau_post = all_est_tau_post.var(axis=0)
+
+all_var_tau_post = np.array(all_var_tau_post)
+mean_var_post = all_var_tau_post.mean(axis=0)
+
+plt.figure()
+plt.plot(var_all_est_tau_post)
+plt.title("Variance de la loi a posteriori à chaque étape")
+plt.legend()
+
+relative_error = var_all_est_tau_post/mean_var_post 
+
+plt.figure()
+plt.plot(relative_error)
+plt.title("Variance de l'estimateur paticulaire à chaque étape")
+plt.legend()
